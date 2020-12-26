@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Workspace
+   version = "1.0">
+   <FileRef
+      location = "group:YLReaderSDK/YLReaderSDK.xcodeproj">
+   </FileRef>
+   <FileRef
+      location = "group:JLRoutes/JLRoutes.xcodeproj">
+   </FileRef>
+   <FileRef
+      location = "group:YLRouterOtherApp/YLRouterOtherApp.xcodeproj">
+   </FileRef>
+   <FileRef
+      location = "group:YLRouterMainApp/YLRouterMainApp.xcodeproj">
+   </FileRef>
+</Workspace>
