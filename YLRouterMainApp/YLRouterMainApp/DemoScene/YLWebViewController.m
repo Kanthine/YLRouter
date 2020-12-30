@@ -18,12 +18,23 @@
     // Do any additional setup after loading the view.
     
     [self.view addSubview:self.webView];
-    
-    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:@"https://juejin.cn/post/6844903582739726350"]];
+    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:self.url]];
     [_webView loadRequest:request];
 }
 
+- (void)viewWillLayoutSubviews{
+    [super viewWillLayoutSubviews];
+    self.webView.frame = self.view.bounds;
+}
+
 #pragma mark - setters and getters
+
+- (NSString *)url{
+    if (_url == nil) {
+        _url = @"https://juejin.cn/post/6844903582739726350";
+    }
+    return _url;
+}
 
 - (WKWebView *)webView{
     if (_webView == nil) {

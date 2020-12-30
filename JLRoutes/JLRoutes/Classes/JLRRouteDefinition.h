@@ -18,48 +18,41 @@ NS_ASSUME_NONNULL_BEGIN
 
 
 /**
- JLRRouteDefinition is a model object representing a registered route, including the URL scheme, route pattern, and priority.
- 
- This class can be subclassed to customize route parsing behavior by overriding -routeResponseForRequest:.
- -callHandlerBlockWithParameters can also be overriden to customize the parameters passed to the handlerBlock.
+ * JLRRouteDefinition 是一个表示注册路由的模型对象，包括 URL scheme、route pattern 和 priority
+ * 这个类可以通过重写 -routeResponseForRequest: 子类来自定义路由解析行为
+ * -callhandlerblockwithparameters也可以被重写，以自定义传递给handlerBlock的参数
  */
 
 @interface JLRRouteDefinition : NSObject <NSCopying>
 
-/// The URL scheme for which this route applies, or JLRoutesGlobalRoutesScheme if global.
+/// 该路由应用的 URL scheme， 如果是全局的则是 JLRoutesGlobalRoutesScheme
 @property (nonatomic, copy, readonly) NSString *scheme;
 
 /// The route pattern.
 @property (nonatomic, copy, readonly) NSString *pattern;
 
-/// The priority of this route pattern.
+/// 优先级
 @property (nonatomic, assign, readonly) NSUInteger priority;
 
-/// The route pattern path components.
+/// pattern 的路径组件
 @property (nonatomic, copy, readonly) NSArray <NSString *> *patternPathComponents;
 
-/// The handler block to invoke when a match is found.
+/// 当路由匹配时调用的 handlerBlock
 @property (nonatomic, copy, readonly) BOOL (^handlerBlock)(NSDictionary *parameters);
 
-/// Check for route definition equality.
+/// 检查路由模型是否相等
 - (BOOL)isEqualToRouteDefinition:(JLRRouteDefinition *)routeDefinition;
 
 
 ///----------------------------------
-/// @name Creating Route Definitions
+/// @name 创建路由模型
 ///----------------------------------
 
-
-/**
- Creates a new route definition. The created definition can be directly added to an instance of JLRoutes.
- 
- This is the designated initializer.
- 
- @param pattern The full route pattern ('/foo/:bar')
- @param priority The route priority, or 0 if default.
- @param handlerBlock The handler block to call when a successful match is found.
- 
- @returns The newly initialized route definition.
+/** 创建一个新的路由模型
+ * 已经创建的路由模型可以添加到JLRoutes实例的 mutableRoutes 数组中
+ * @param pattern 完整的路由模式 ('/foo/:bar')
+ * @param priority 优先级，默认为 0
+ * @param handlerBlock 当匹配成功时处理事件的回调
  */
 - (instancetype)initWithPattern:(NSString *)pattern priority:(NSUInteger)priority handlerBlock:(BOOL (^)(NSDictionary *parameters))handlerBlock NS_DESIGNATED_INITIALIZER;
 
@@ -74,103 +67,74 @@ NS_ASSUME_NONNULL_BEGIN
 /// @name Responding To Registration
 ///----------------------------------
 
-
-/**
- Called when the route has been registered for the given scheme.
- 
- @param scheme The scheme this route has become active for.
- */
+/// 路由注册时，需要配置对应的 scheme
 - (void)didBecomeRegisteredForScheme:(NSString *)scheme;
 
 
 ///-------------------------------
-/// @name Matching Route Requests
+/// @name 匹配 Route 请求
 ///-------------------------------
 
-
-/**
- Creates and returns a JLRRouteResponse for the provided JLRRouteRequest. The response specifies if there was a match or not.
- 
- @param request The JLRRouteRequest to create a response for.
- 
- @returns An JLRRouteResponse instance representing the result of attempting to match request to thie route definition.
+/** 为所提供的JLRRouteRequest创建并返回JLRRouteResponse；
+ * @param request 用于创建响应的请求 JLRRouteRequest
+ * @returns 创建的响应，指示是否匹配请求
  */
 - (JLRRouteResponse *)routeResponseForRequest:(JLRRouteRequest *)request;
 
 
-/**
- Invoke handlerBlock with the given parameters. This may be overriden by subclasses.
- 
- @param parameters The parameters to pass to handlerBlock.
- 
- @returns The value returned by calling handlerBlock (YES if it is considered handled and NO if not).
+/** 匹配成功后，使用指定的参数调用路由模型对象的 handlerBlock
+ * @param parameters 传递给handlerBlock的参数
+ * @note 可能会被子类覆盖
+ * @returns 调用handlerBlock的返回值(如果被视为已经处理了则返回YES，否则返回NO)
  */
 - (BOOL)callHandlerBlockWithParameters:(NSDictionary *)parameters;
 
 
 ///---------------------------------
-/// @name Creating Match Parameters
+/// @name 创建匹配参数
 ///---------------------------------
 
-
-/**
- Creates and returns the full set of match parameters to be passed as part of a valid match.
- Subclasses can override this method to mutate the match parameters, or simply call it to generate the expected value.
- 
- @param request The request being routed.
- @param routeVariables The parsed route variables (aka a route of '/route/:param' being routed with '/foo/bar' would create [ 'param' : 'bar' ])
- 
- @returns The full set of match parameters to be passed as part of a valid match.
- @see defaultMatchParametersForRequest:
- @see routeVariablesForRequest:
+/** 创建并返回完整的匹配参数集合，作为有效匹配的一部分传递
+ * @note 子类可以重写这个方法来改变匹配参数，或者直接调用它来生成期望的值。
+ * @param request 路由请求
+ * @param routeVariables 解析的路由变量 (aka a route of '/route/:param' being routed with '/foo/bar' would create [ 'param' : 'bar' ])
+ * @returns 完整的匹配参数集合，作为有效匹配的一部分传递
  */
 - (NSDictionary *)matchParametersForRequest:(JLRRouteRequest *)request routeVariables:(NSDictionary <NSString *, NSString *> *)routeVariables;
 
 
-/**
- Creates and returns the default base match parameters for a given request. Does not include any parsed fields.
- 
- @param request The request being routed.
- 
- @returns The default match parameters for a given request. Only includes key/value pairs for JLRoutePatternKey, JLRouteURLKey, and JLRouteSchemeKey.
+/** 创建并返回给定请求的默认基本匹配参数。不包括任何已解析的字段。
+ * @param request 路由请求
+ * @returns 给定请求的默认匹配参数。仅包含JLRoutePatternKey、JLRouteURLKey和JLRouteSchemeKey的键/值对。
  */
 - (NSDictionary *)defaultMatchParametersForRequest:(JLRRouteRequest *)request;
 
 
 ///-------------------------------
-/// @name Parsing Route Variables
+/// @name 解析 Route 变量
 ///-------------------------------
 
-
-/**
- Parses and returns route variables for the given request.
- 
- @param request The request to parse variable values from.
- 
- @returns The parsed route variables if there was a match, or nil if it was not a match.
+/** 解析并返回指定请求的路由变量
+ * @param request 用于解析变量值的请求
+ * 如果匹配，则解析routeVariables ;如果不匹配，则解析路由变量为nil
+ *
+ * 例如注册路由为 YLRouterMain://mainTabBar/:name
+ * 则发起        YLRouterMain://mainTabBar/user
+ * 解析变量 @{"name":"user"}
  */
 - (nullable NSDictionary <NSString *, NSString *> *)routeVariablesForRequest:(JLRRouteRequest *)request;
 
-
 /**
- Parses value into a variable name, including stripping out any extra characters if needed.
- 
- @param value The raw string value that should be parsed into a variable name.
- 
- @returns The variable name to use as the key of a key/value pair in the parsed route variables.
+ * 当字符串长度大于 1 时，去掉字符串开头的 ':'
+ * 当字符串长度大于 1 时，去掉字符串结尾的 '#'
  */
 - (NSString *)routeVariableNameForValue:(NSString *)value;
 
-
 /**
- Parses value into a variable value, including stripping out any extra characters if needed.
- 
- @param value The raw string value that should be parsed into a variable value.
- 
- @returns The variable value to use as the value of a key/value pair in the parsed route variables.
+ * 如果字符串UTF-8 编码，则解码
+ * 当字符串长度大于 1 时，去掉字符串结尾的 '#'
  */
 - (NSString *)routeVariableValueForValue:(NSString *)value;
-
 
 @end
 

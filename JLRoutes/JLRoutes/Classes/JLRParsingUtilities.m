@@ -24,6 +24,9 @@
 
 @interface NSString (JLRoutes_Utilities)
 
+/** 过滤掉字符串首尾的 ‘/’
+ *  以‘/’ 分割字符串，获取一个数组
+ */
 - (NSArray <NSString *> *)JLRoutes_trimmedPathComponents;
 
 @end
@@ -31,15 +34,13 @@
 
 #pragma mark - Parsing Utility Methods
 
-
+/// 子路径
 @interface JLRParsingUtilities_RouteSubpath : NSObject
 
 @property (nonatomic, strong) NSArray <NSString *> *subpathComponents;
-@property (nonatomic, assign) BOOL isOptionalSubpath;
+@property (nonatomic, assign) BOOL isOptionalSubpath;/// 是否可选
 
 @end
-
-
 @implementation JLRParsingUtilities_RouteSubpath
 
 - (NSString *)description
@@ -76,85 +77,91 @@
 
 @implementation JLRParsingUtilities
 
-+ (NSString *)variableValueFrom:(NSString *)value decodePlusSymbols:(BOOL)decodePlusSymbols
-{
+
+/** 处理字符串中的 '+'
+ * @param decodePlusSymbols 是否将字符串中的 '+' 替换为 @" "
+ */
++ (NSString *)variableValueFrom:(NSString *)value decodePlusSymbols:(BOOL)decodePlusSymbols{
     if (!decodePlusSymbols) {
         return value;
     }
     return [value stringByReplacingOccurrencesOfString:@"+" withString:@" " options:NSLiteralSearch range:NSMakeRange(0, value.length)];
 }
 
-+ (NSDictionary *)queryParams:(NSDictionary *)queryParams decodePlusSymbols:(BOOL)decodePlusSymbols
-{
+/** 处理字典中所有值中字符串包含的 '+'
+ * @param decodePlusSymbols 是否将字符串中的 '+' 替换为 @" "
+ */
++ (NSDictionary *)queryParams:(NSDictionary *)queryParams decodePlusSymbols:(BOOL)decodePlusSymbols{
     if (!decodePlusSymbols) {
         return queryParams;
     }
     
     NSMutableDictionary *updatedQueryParams = [NSMutableDictionary dictionary];
     
-    for (NSString *name in queryParams) {
-        id value = queryParams[name];
+    for (NSString *key in queryParams) {
+        id value = queryParams[key];
         
         if ([value isKindOfClass:[NSArray class]]) {
             NSMutableArray *variables = [NSMutableArray array];
             for (NSString *arrayValue in (NSArray *)value) {
                 [variables addObject:[self variableValueFrom:arrayValue decodePlusSymbols:YES]];
             }
-            updatedQueryParams[name] = [variables copy];
+            updatedQueryParams[key] = [variables copy];
         } else if ([value isKindOfClass:[NSString class]]) {
             NSString *variable = [self variableValueFrom:value decodePlusSymbols:YES];
-            updatedQueryParams[name] = variable;
+            updatedQueryParams[key] = variable;
         } else {
             NSAssert(NO, @"Unexpected query parameter type: %@", NSStringFromClass([value class]));
         }
     }
-    
     return [updatedQueryParams copy];
 }
 
-+ (NSArray <NSString *> *)expandOptionalRoutePatternsForPattern:(NSString *)routePattern
-{
-    /* this method exists to take a route pattern that is known to contain optional params, such as:
-     
-     /path/:thing/(/a)(/b)(/c)
-     
-     and create the following paths:
-     
-     /path/:thing/a/b/c
-     /path/:thing/a/b
-     /path/:thing/a/c
-     /path/:thing/b/a
-     /path/:thing/a
-     /path/:thing/b
-     /path/:thing/c
-     
-     */
-    
+/** 为 Pattern 展开可选的路由模式
+ * eg： routePattern = @"/path/:thing/(/a)(/b)(/c)"
+ * 创建以下路径:
+ *      /path/:thing/a/b/c
+ *      /path/:thing/a/b
+ *      /path/:thing/a/c
+ *      /path/:thing/b/a
+ *      /path/:thing/a
+ *      /path/:thing/b
+ *      /path/:thing/c
+ *
+ *
+ * 1、将 routePattern 解析为子路径对象
+ * 2、提取出所需的子路径
+ * 3、将子路径排列组合为可能的路由模式
+ * 4、过滤掉实际上不满足规则的的路由模式
+ * 5、将它们转换回我们可以注册的字符串路由
+ * 6、按长度对它们进行排序
+ */
++ (NSArray <NSString *> *)expandOptionalRoutePatternsForPattern:(NSString *)routePattern{
     if ([routePattern rangeOfString:@"("].location == NSNotFound) {
         return @[];
     }
     
-    // First, parse the route pattern into subpath objects.
+    /// 首先，将 routePattern 解析为子路径对象
     NSArray <JLRParsingUtilities_RouteSubpath *> *subpaths = [self _routeSubpathsForPattern:routePattern];
     if (subpaths.count == 0) {
         return @[];
     }
     
-    // Next, etract out the required subpaths.
+    /// 接下来，提取出所需的子路径
     NSSet <JLRParsingUtilities_RouteSubpath *> *requiredSubpaths = [NSSet setWithArray:[subpaths JLRoutes_filter:^BOOL(JLRParsingUtilities_RouteSubpath *subpath) {
         return !subpath.isOptionalSubpath;
     }]];
-    
-    // Then, expand the subpath permutations into possible route patterns.
+
+    /// 然后，将子路径排列组合为可能的路由模式
     NSArray <NSArray <JLRParsingUtilities_RouteSubpath *> *> *allSubpathCombinations = [subpaths JLRoutes_allOrderedCombinations];
-    
-    // Finally, we need to filter out any possible route patterns that don't actually satisfy the rules of the route.
-    // What this means in practice is throwing out any that do not contain all required subpaths (since those are explicitly not optional).
+
+    /// 最后，过滤掉实际上不满足规则的的路由模式
+    /// allSubpathCombinations 中的元素数组： subpath 没有必选的，该组元素过滤掉
     NSArray <NSArray <JLRParsingUtilities_RouteSubpath *> *> *validSubpathCombinations = [allSubpathCombinations JLRoutes_filter:^BOOL(NSArray <JLRParsingUtilities_RouteSubpath *> *possibleRouteSubpaths) {
         return [requiredSubpaths isSubsetOfSet:[NSSet setWithArray:possibleRouteSubpaths]];
     }];
-    
-    // Once we have a filtered list of valid subpaths, we just need to convert them back into string routes that can we registered.
+
+    /// 此时拥有有效子路径的过滤列表，只需要将它们转换回我们可以注册的字符串路由。
     NSArray <NSString *> *validSubpathRouteStrings = [validSubpathCombinations JLRoutes_map:^id(NSArray <JLRParsingUtilities_RouteSubpath *> *subpaths) {
         NSString *routePattern = @"/";
         for (JLRParsingUtilities_RouteSubpath *subpath in subpaths) {
@@ -163,28 +170,38 @@
         }
         return routePattern;
     }];
-    
-    // Before returning, sort them by length so that the longest and most specific routes are registered first before the less specific shorter ones.
+
+    // 按长度对它们进行排序，
     validSubpathRouteStrings = [validSubpathRouteStrings sortedArrayUsingDescriptors:@[[NSSortDescriptor sortDescriptorWithKey:@"length" ascending:NO selector:@selector(compare:)]]];
-    
     return validSubpathRouteStrings;
 }
+
 
 + (NSArray <JLRParsingUtilities_RouteSubpath *> *)_routeSubpathsForPattern:(NSString *)routePattern
 {
     NSMutableArray <JLRParsingUtilities_RouteSubpath *> *subpaths = [NSMutableArray array];
     
+    /** NSScanner : 用于在字符串中扫描指定的字符，尤其是把它们翻译/转换为数字和别的字符串；
+     *  可以在创建 NSScaner 时指定它的 string 属性，然后scanner会按照你的要求从头到尾地扫描这个字符串的每个字符。
+     *  默认的忽略字符是空格和回车字符
+     *
+     *  scanner.scanLocation 指定扫描开始的位置
+     *  scanner.isAtEnd 是否扫描到末尾
+     */
     NSScanner *scanner = [NSScanner scannerWithString:routePattern];
-    while (![scanner isAtEnd]) {
+    while (![scanner isAtEnd]) {/// isAtEnd 是否扫描到末尾
         NSString *preOptionalSubpath = nil;
+        
+        /// 从当前的扫描位置开始扫描，扫描到和传入的字符串相同字符串时停止，指针指向的地址存储的是遇到传入字符串之前的内容
+        /// 例如 scanner 的 string 内容为 123abc678,传入的字符串内容为abc，存储的内容为 123
         BOOL didScan = [scanner scanUpToString:@"(" intoString:&preOptionalSubpath];
         if (!didScan) {
             NSAssert([routePattern characterAtIndex:scanner.scanLocation] == '(', @"Unexpected character: %c", [routePattern characterAtIndex:scanner.scanLocation]);
         }
         
         if (!scanner.isAtEnd) {
-            // otherwise, advance past the ( character
-            scanner.scanLocation = scanner.scanLocation + 1;
+            // 否则，跳过 '('
+            scanner.scanLocation = scanner.scanLocation + 1;/// scanLocation 指定扫描开始的位置
         }
         
         if (preOptionalSubpath.length > 0 && ![preOptionalSubpath isEqualToString:@")"] && ![preOptionalSubpath isEqualToString:@"/"]) {
@@ -211,7 +228,6 @@
             [subpaths addObject:subpath];
         }
     }
-    
     return [subpaths copy];
 }
 
@@ -223,6 +239,12 @@
 
 @implementation NSArray (JLRoutes_Utilities)
 
+/** 数组中所有元素的排列组合
+ * 如：@[@"1",@"3",@"2"]
+ *
+ * ( (), (1), (3), (1,3), (2), (1,2), (3,2), (1,3,2) )
+ *
+ */
 - (NSArray<NSArray *> *)JLRoutes_allOrderedCombinations
 {
     NSInteger length = self.count;
@@ -274,6 +296,9 @@
 
 @implementation NSString (JLRoutes_Utilities)
 
+/** 过滤掉字符串首尾的 ‘/’
+ *  以‘/’ 分割字符串，获取一个数组
+ */
 - (NSArray <NSString *> *)JLRoutes_trimmedPathComponents
 {
     // Trims leading and trailing slashes and then separates by slash

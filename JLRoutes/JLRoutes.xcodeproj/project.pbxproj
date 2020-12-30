@@ -13,8 +13,8 @@
 		5D33681D16C6DC9300F983AA /* JLRoutes.m in Sources */ = {isa = PBXBuildFile; fileRef = 5D33681C16C6DC9300F983AA /* JLRoutes.m */; };
 		5D3CB0721C73DA2700870B55 /* JLRoutesTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 5D3CB0711C73DA2700870B55 /* JLRoutesTests.m */; };
 		5D3CB0741C73DA2700870B55 /* libJLRoutes.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5D33681216C6DC9300F983AA /* libJLRoutes.a */; };
-		5DA69C5C1DAB4C3A007C8E9C /* JLRParsingUtilities.h in Headers */ = {isa = PBXBuildFile; fileRef = 5DA69C541DAB4C3A007C8E9C /* JLRParsingUtilities.h */; };
-		5DA69C5D1DAB4C3A007C8E9C /* JLRParsingUtilities.h in Headers */ = {isa = PBXBuildFile; fileRef = 5DA69C541DAB4C3A007C8E9C /* JLRParsingUtilities.h */; };
+		5DA69C5C1DAB4C3A007C8E9C /* JLRParsingUtilities.h in Headers */ = {isa = PBXBuildFile; fileRef = 5DA69C541DAB4C3A007C8E9C /* JLRParsingUtilities.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		5DA69C5D1DAB4C3A007C8E9C /* JLRParsingUtilities.h in Headers */ = {isa = PBXBuildFile; fileRef = 5DA69C541DAB4C3A007C8E9C /* JLRParsingUtilities.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		5DA69C5E1DAB4C3A007C8E9C /* JLRParsingUtilities.m in Sources */ = {isa = PBXBuildFile; fileRef = 5DA69C551DAB4C3A007C8E9C /* JLRParsingUtilities.m */; };
 		5DA69C5F1DAB4C3A007C8E9C /* JLRParsingUtilities.m in Sources */ = {isa = PBXBuildFile; fileRef = 5DA69C551DAB4C3A007C8E9C /* JLRParsingUtilities.m */; };
 		5DA69C601DAB4C3A007C8E9C /* JLRRouteDefinition.h in Headers */ = {isa = PBXBuildFile; fileRef = 5DA69C561DAB4C3A007C8E9C /* JLRRouteDefinition.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -183,8 +183,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				5DA69C681DAB4C3A007C8E9C /* JLRRouteResponse.h in Headers */,
-				5DA69C5C1DAB4C3A007C8E9C /* JLRParsingUtilities.h in Headers */,
 				5DE775661EA1B15200375C1D /* JLRRouteHandler.h in Headers */,
+				5DA69C5C1DAB4C3A007C8E9C /* JLRParsingUtilities.h in Headers */,
 				5DA69C601DAB4C3A007C8E9C /* JLRRouteDefinition.h in Headers */,
 				D0C20A3017061066007746A6 /* JLRoutes.h in Headers */,
 				5DA69C641DAB4C3A007C8E9C /* JLRRouteRequest.h in Headers */,
@@ -270,6 +270,7 @@
 			developmentRegion = English;
 			hasScannedForEncodings = 0;
 			knownRegions = (
+				English,
 				en,
 			);
 			mainGroup = 5D33680916C6DC9300F983AA;

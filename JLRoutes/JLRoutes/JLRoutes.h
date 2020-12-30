@@ -37,16 +37,19 @@ extern NSString *const JLRoutesGlobalRoutesScheme;
 
 
 
-/**
- The JLRoutes class is the main entry-point into the JLRoutes framework. Used for accessing schemes, managing routes, and routing URLs.
+/** JLRoutes 类是 JLRoutes 框架的主要入口点: 用于访问 Schemes、管理 routes 、routing URLs
+ *
+ * JLRoutes 是通过解析URL不同的参数，并用block回调的方式处理页面间的传值以及跳转。
+ * 其本质就是在程序中注册一个全局的字典，key是URL scheme，value是一个参数为字典的block回调。
  */
 
 @interface JLRoutes : NSObject
 
-/// Controls whether or not this router will try to match a URL with global routes if it can't be matched in the current namespace. Default is NO.
+/// 控制这个路由器如果在当前命名空间中不能匹配，是否尝试将URL与全局路由匹配。默认为NO。
 @property (nonatomic, assign) BOOL shouldFallbackToGlobalRoutes;
 
-/// Called any time routeURL returns NO. Respects shouldFallbackToGlobalRoutes.
+
+//  任何时候调用routeURL返回NO的回调。与 shouldFallbackToGlobalRoutes 属性相关
 @property (nonatomic, copy, nullable) void (^unmatchedURLHandler)(JLRoutes *routes, NSURL *__nullable URL, NSDictionary<NSString *, id> *__nullable parameters);
 
 
@@ -55,56 +58,58 @@ extern NSString *const JLRoutesGlobalRoutesScheme;
 ///-------------------------------
 
 
-/// Returns the global routing scheme
+/// 获取全局的 routing scheme
 + (instancetype)globalRoutes;
 
-/// Returns a routing namespace for the given scheme
+/** 获取指定 Scheme 的路由
+ * @param scheme 指定的Scheme；如果不设置，则默认 scheme为  JLRoutesGlobalRoutesScheme
+ * 通过设置 scheme ，对route细分化，可以方便查找！
+ * 如果不设置，所有的route都放在同一个 scheme 下，在内容量大的情况下会导致读取的缓慢。
+ */
 + (instancetype)routesForScheme:(NSString *)scheme;
 
-/// Unregister and delete an entire scheme namespace
+/// 注销并删除给定 Scheme 的路由
 + (void)unregisterRouteScheme:(NSString *)scheme;
 
-/// Unregister all routes
+/// 注销所有路由
 + (void)unregisterAllRouteSchemes;
 
 
 ///-------------------------------
-/// @name Managing Routes
+/// @name 管理 Routes
 ///-------------------------------
 
-
-/// Add a route by directly inserted the route definition. This may be a subclass of JLRRouteDefinition to provide customized routing logic.
+/** 注册路由：
+ * @param routePattern 在注册阶段已经进行赋值，不需要别的操作
+ * @param priority 优先级，默认为 0；用途在存入数组中排队顺序，数值越大，在数组中排的位置越靠前。
+ * @param handler 处理路由时间，返回值表示是否处理
+ *                返回一个BOOL值，表示 handlerBlock 是否真的处理了该路由。如果返回NO, JLRoutes将继续寻找匹配的路由
+ * @param routeDefinition 定制路由逻辑：将每一条注册数据（pattern、priority、handler）封装在JLRouteDefinition对象中
+ */
 - (void)addRoute:(JLRRouteDefinition *)routeDefinition;
-
-/// Registers a routePattern with default priority (0) in the receiving scheme.
 - (void)addRoute:(NSString *)routePattern handler:(BOOL (^__nullable)(NSDictionary<NSString *, id> *parameters))handlerBlock;
-
-/// Registers a routePattern in the global scheme namespace with a handlerBlock to call when the route pattern is matched by a URL.
-/// The block returns a BOOL representing if the handlerBlock actually handled the route or not. If
-/// a block returns NO, JLRoutes will continue trying to find a matching route.
 - (void)addRoute:(NSString *)routePattern priority:(NSUInteger)priority handler:(BOOL (^__nullable)(NSDictionary<NSString *, id> *parameters))handlerBlock;
-
-/// Registers multiple routePatterns for one handler with default priority (0) in the receiving scheme.
 - (void)addRoutes:(NSArray<NSString *> *)routePatterns handler:(BOOL (^__nullable)(NSDictionary<NSString *, id> *parameters))handlerBlock;
 
-/// Removes the route from the receiving scheme.
+// 从接收scheme中移除路由
 - (void)removeRoute:(JLRRouteDefinition *)routeDefinition;
 
 /// Removes the first route matching routePattern from the receiving scheme.
+// 从接收scheme中移除第一个匹配此路由模式的路由
 - (void)removeRouteWithPattern:(NSString *)routePattern;
 
+/// 从接收scheme中移除所有路由
 /// Removes all routes from the receiving scheme.
 - (void)removeAllRoutes;
 
+/// 使用字典风格的下标注册一个具有默认优先级(0)的路由模式
 /// Registers a routePattern with default priority (0) using dictionary-style subscripting.
 - (void)setObject:(nullable id)handlerBlock forKeyedSubscript:(NSString *)routePatten;
 
-/// Return all registered routes in the receiving scheme.
-/// @see allRoutes
+/// 返回在接收scheme中的所有已注册路由
 - (NSArray <JLRRouteDefinition *> *)routes;
 
-/// Return all registered routes across all schemes, keyed by scheme
-/// @see routes
+/// 返回所有已注册路由: keyed 是scheme ,value 为对应的已注册路由
 + (NSDictionary <NSString *, NSArray <JLRRouteDefinition *> *> *)allRoutes;
 
 
@@ -113,61 +118,59 @@ extern NSString *const JLRoutesGlobalRoutesScheme;
 ///-------------------------------
 
 
-/// Returns YES if the provided URL will successfully match against any registered route, NO if not.
+/// 如果提供的 URL 可以成功匹配任一个已注册的路由，则返回YES。否则返回NO。
 + (BOOL)canRouteURL:(nullable NSURL *)URL;
 
-/// Returns YES if the provided URL will successfully match against any registered route for the current scheme, NO if not.
+/// 如果提供的 ULR 可以成功为当前scheme匹配任一个已注册的路由，则返回YES。否则返回NO。
 - (BOOL)canRouteURL:(nullable NSURL *)URL;
 
-/// Routes a URL, calling handler blocks for patterns that match the URL until one returns YES.
-/// If no matching route is found, the unmatchedURLHandler will be called (if set).
+/** 路由一个URL，为与此 URL 相匹配的模式调用 handlerBlock，直到找到了相匹配的模式，返回YES
+ *  如果没有找到匹配的路由，将调用提前设置的 unmatchedURLHandler
+ *  @param parameters  一些参数信息，传送至匹配的 route block
+ */
 + (BOOL)routeURL:(nullable NSURL *)URL;
-
-/// Routes a URL within a particular scheme, calling handler blocks for patterns that match the URL until one returns YES.
-/// If no matching route is found, the unmatchedURLHandler will be called (if set).
-- (BOOL)routeURL:(nullable NSURL *)URL;
-
-/// Routes a URL in any routes scheme, calling handler blocks (for patterns that match URL) until one returns YES.
-/// Additional parameters get passed through to the matched route block.
 + (BOOL)routeURL:(nullable NSURL *)URL withParameters:(nullable NSDictionary<NSString *, id> *)parameters;
 
-/// Routes a URL in a specific scheme, calling handler blocks (for patterns that match URL) until one returns YES.
-/// Additional parameters get passed through to the matched route block.
+
+/** 在特定scheme内路由一个URL，为与此URL相匹配的模式调用 handlerBlock，直到找到了相匹配的模式，返回YES。
+ *  如果没有找到匹配的路由，将调用提前设置的 unmatchedURLHandler
+ *  @param parameters  一些参数信息，传送至匹配的 route block
+ */
+- (BOOL)routeURL:(nullable NSURL *)URL;
 - (BOOL)routeURL:(nullable NSURL *)URL withParameters:(nullable NSDictionary<NSString *, id> *)parameters;
 
 @end
 
 
 // Global settings to use for parsing and routing.
-
 @interface JLRoutes (GlobalOptions)
 
 ///----------------------------------
-/// @name Configuring Global Options
+/// @name 一些全局配置
 ///----------------------------------
 
-/// Configures verbose logging. Defaults to NO.
+/// 配置日志记录，默认为 NO
 + (void)setVerboseLoggingEnabled:(BOOL)loggingEnabled;
 
-/// Returns current verbose logging enabled state. Defaults to NO.
+/// 当前日志记录启用状态；默认为 NO
 + (BOOL)isVerboseLoggingEnabled;
 
-/// Configures if '+' should be replaced with spaces in parsed values. Defaults to YES.
+/// 配置: 解析值中的'+'是否应该被替换为空格。默认为 YES，替换
 + (void)setShouldDecodePlusSymbols:(BOOL)shouldDecode;
 
-/// Returns if '+' should be replaced with spaces in parsed values. Defaults to YES.
+/// 是否将解析值中的'+'是否应该被替换为空格。默认为 YES，替换
 + (BOOL)shouldDecodePlusSymbols;
 
-/// Configures if URL host is always considered to be a path component. Defaults to NO.
+/// 配置: URL host 是否始终被视为路径组件。默认为NO。
 + (void)setAlwaysTreatsHostAsPathComponent:(BOOL)treatsHostAsPathComponent;
 
-/// Returns if URL host is always considered to be a path component. Defaults to NO.
+///  判断 URL host 是否始终被视为路径组件。默认为NO。
 + (BOOL)alwaysTreatsHostAsPathComponent;
 
-/// Configures the default class to use when creating route definitions. Defaults to JLRRouteDefinition.
+/// 配置: 创建 Route 时使用的默认类; 默认为 JLRRouteDefinition
 + (void)setDefaultRouteDefinitionClass:(Class)routeDefinitionClass;
 
-/// Returns the default class to use when creating route definitions. Defaults to JLRRouteDefinition.
+/// 获取创建 Route 时使用的类; 默认为JLRRouteDefinition
 + (Class)defaultRouteDefinitionClass;
 
 @end

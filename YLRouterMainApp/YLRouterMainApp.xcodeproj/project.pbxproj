@@ -7,8 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		F7816388259B0F3A0088ADC1 /* MainTabBarController.m in Sources */ = {isa = PBXBuildFile; fileRef = F7816387259B0F3A0088ADC1 /* MainTabBarController.m */; };
+		F781638C259B0FF10088ADC1 /* UserHomeViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = F781638B259B0FF10088ADC1 /* UserHomeViewController.m */; };
+		F7816390259B100D0088ADC1 /* NewsHomeViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = F781638F259B100D0088ADC1 /* NewsHomeViewController.m */; };
 		F7D9DE9925970CDC0033EF76 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = F7D9DE9825970CDC0033EF76 /* AppDelegate.m */; };
-		F7D9DE9F25970CDC0033EF76 /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = F7D9DE9E25970CDC0033EF76 /* ViewController.m */; };
 		F7D9DEA225970CDC0033EF76 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = F7D9DEA025970CDC0033EF76 /* Main.storyboard */; };
 		F7D9DEA425970CE00033EF76 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F7D9DEA325970CE00033EF76 /* Assets.xcassets */; };
 		F7D9DEA725970CE00033EF76 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = F7D9DEA525970CE00033EF76 /* LaunchScreen.storyboard */; };
@@ -20,11 +22,16 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		F7816386259B0F3A0088ADC1 /* MainTabBarController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MainTabBarController.h; sourceTree = "<group>"; };
+		F7816387259B0F3A0088ADC1 /* MainTabBarController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MainTabBarController.m; sourceTree = "<group>"; };
+		F781638A259B0FF10088ADC1 /* UserHomeViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = UserHomeViewController.h; sourceTree = "<group>"; };
+		F781638B259B0FF10088ADC1 /* UserHomeViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = UserHomeViewController.m; sourceTree = "<group>"; };
+		F781638E259B100D0088ADC1 /* NewsHomeViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = NewsHomeViewController.h; sourceTree = "<group>"; };
+		F781638F259B100D0088ADC1 /* NewsHomeViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NewsHomeViewController.m; sourceTree = "<group>"; };
+		F7816393259B150C0088ADC1 /* PrefixHeader.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PrefixHeader.pch; sourceTree = "<group>"; };
 		F7D9DE9425970CDC0033EF76 /* YLRouterMainApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = YLRouterMainApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F7D9DE9725970CDC0033EF76 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		F7D9DE9825970CDC0033EF76 /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
-		F7D9DE9D25970CDC0033EF76 /* ViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ViewController.h; sourceTree = "<group>"; };
-		F7D9DE9E25970CDC0033EF76 /* ViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ViewController.m; sourceTree = "<group>"; };
 		F7D9DEA125970CDC0033EF76 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		F7D9DEA325970CE00033EF76 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		F7D9DEA625970CE00033EF76 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
@@ -74,12 +81,11 @@
 				F7D9DF3D2597382E0033EF76 /* MainPage */,
 				F7D9DEBC2597146A0033EF76 /* DemoScene */,
 				F7D9DEB225970D9F0033EF76 /* YLRouter */,
-				F7D9DE9D25970CDC0033EF76 /* ViewController.h */,
-				F7D9DE9E25970CDC0033EF76 /* ViewController.m */,
 				F7D9DEA025970CDC0033EF76 /* Main.storyboard */,
 				F7D9DEA325970CE00033EF76 /* Assets.xcassets */,
 				F7D9DEA525970CE00033EF76 /* LaunchScreen.storyboard */,
 				F7D9DEA825970CE00033EF76 /* Info.plist */,
+				F7816393259B150C0088ADC1 /* PrefixHeader.pch */,
 				F7D9DEA925970CE00033EF76 /* main.m */,
 				F7D9DFB0259740BA0033EF76 /* Data.txt */,
 			);
@@ -109,6 +115,12 @@
 		F7D9DF3D2597382E0033EF76 /* MainPage */ = {
 			isa = PBXGroup;
 			children = (
+				F7816386259B0F3A0088ADC1 /* MainTabBarController.h */,
+				F7816387259B0F3A0088ADC1 /* MainTabBarController.m */,
+				F781638A259B0FF10088ADC1 /* UserHomeViewController.h */,
+				F781638B259B0FF10088ADC1 /* UserHomeViewController.m */,
+				F781638E259B100D0088ADC1 /* NewsHomeViewController.h */,
+				F781638F259B100D0088ADC1 /* NewsHomeViewController.m */,
 			);
 			path = MainPage;
 			sourceTree = "<group>";
@@ -184,9 +196,11 @@
 			buildActionMask = 2147483647;
 			files = (
 				F7D9DEBF259714840033EF76 /* YLWebViewController.m in Sources */,
+				F7816388259B0F3A0088ADC1 /* MainTabBarController.m in Sources */,
+				F781638C259B0FF10088ADC1 /* UserHomeViewController.m in Sources */,
 				F7D9DEBA25970E960033EF76 /* YLRouterService.m in Sources */,
-				F7D9DE9F25970CDC0033EF76 /* ViewController.m in Sources */,
 				F7D9DE9925970CDC0033EF76 /* AppDelegate.m in Sources */,
+				F7816390259B100D0088ADC1 /* NewsHomeViewController.m in Sources */,
 				F7D9DEAA25970CE00033EF76 /* main.m in Sources */,
 				F7D9DEB625970E5E0033EF76 /* YLRouterConfig.m in Sources */,
 			);
@@ -332,7 +346,10 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "${SRCROOT}/YLRouterMainApp/PrefixHeader.pch";
 				INFOPLIST_FILE = YLRouterMainApp/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -349,7 +366,10 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "${SRCROOT}/YLRouterMainApp/PrefixHeader.pch";
 				INFOPLIST_FILE = YLRouterMainApp/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

@@ -14,13 +14,39 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-
+/** JLRParsingUtilities 主要提供根据传入的匹配链接生成对应的合规的URI（仅仅将可选类型，拆解，例子如下）
+ */
 @interface JLRParsingUtilities : NSObject
 
+/** 处理字符串中的 '+'
+ * @param decodePlusSymbols 是否将字符串中的 '+' 替换为 @" "
+ */
 + (NSString *)variableValueFrom:(NSString *)value decodePlusSymbols:(BOOL)decodePlusSymbols;
 
+/** 处理字典中所有值中字符串包含的 '+'
+ * @param decodePlusSymbols 是否将字符串中的 '+' 替换为 @" "
+ */
 + (NSDictionary *)queryParams:(NSDictionary *)queryParams decodePlusSymbols:(BOOL)decodePlusSymbols;
 
+/** 为 Pattern 展开可选的路由模式
+ * eg： routePattern = @"/path/:thing/(/a)(/b)(/c)"
+ * 创建以下路径:
+ *      /path/:thing/a/b/c
+ *      /path/:thing/a/b
+ *      /path/:thing/a/c
+ *      /path/:thing/b/a
+ *      /path/:thing/a
+ *      /path/:thing/b
+ *      /path/:thing/c
+ *
+ *
+ * 1、将 routePattern 解析为子路径对象
+ * 2、提取出所需的子路径
+ * 3、将子路径排列组合为可能的路由模式
+ * 4、过滤掉实际上不满足规则的的路由模式
+ * 5、将它们转换回我们可以注册的字符串路由
+ * 6、按长度对它们进行排序
+ */
 + (NSArray <NSString *> *)expandOptionalRoutePatternsForPattern:(NSString *)routePattern;
 
 @end

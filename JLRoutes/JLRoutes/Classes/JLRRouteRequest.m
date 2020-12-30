@@ -26,6 +26,13 @@
 
 @implementation JLRRouteRequest
 
+/** NSURLComponents 快捷高效的提取URL中的各个参数
+ *
+ <NSURLComponents 0x6000035b9490> {scheme = YLRouterMain, user = (null), password = (null), host = webView, port = (null), path = , query = (null), fragment = (null)}
+ <NSURLComponents 0x28300fb10> {scheme = (null), user = (null), password = (null), host = (null), port = (null), path = ://learnPark, query = (null), fragment = (null)}
+
+ 
+ */
 - (instancetype)initWithURL:(NSURL *)URL options:(JLRRouteRequestOptions)options additionalParameters:(nullable NSDictionary *)additionalParameters
 {
     if ((self = [super init])) {

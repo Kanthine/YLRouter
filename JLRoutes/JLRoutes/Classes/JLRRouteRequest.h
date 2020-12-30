@@ -28,42 +28,37 @@ typedef NS_OPTIONS(NSUInteger, JLRRouteRequestOptions) {
 };
 
 
-/**
- JLRRouteRequest is a model representing a request to route a URL.
- It gets parsed into path components and query parameters, which are then used by JLRRouteDefinition to attempt a match.
+/** JLRRouteRequest 是一个表示路由 URL 请求的模型，提供输入 URL 的分解；
+ * 分解为scheme、path、param和fragment等；
+ * 然后由 JLRRouteDefinition 使用该请求来尝试匹配，生成一个匹配的响应 JLRRouteRequest
  */
-
 @interface JLRRouteRequest : NSObject
 
-/// The URL being routed.
+/// 路由的URL
 @property (nonatomic, copy, readonly) NSURL *URL;
 
-/// The URL's path components.
+/// URL的路径组件
 @property (nonatomic, strong, readonly) NSArray *pathComponents;
 
-/// The URL's query parameters.
+/// URL的查询参数
 @property (nonatomic, strong, readonly) NSDictionary *queryParams;
 
-/// Route request options, generally configured from the framework global options.
+/// 路由请求选项，一般从框架全局选项配置。
 @property (nonatomic, assign, readonly) JLRRouteRequestOptions options;
 
-/// Additional parameters to pass through as part of the match parameters dictionary.
+/// 作为匹配参数的一部分传递的其他参数
 @property (nonatomic, copy, nullable, readonly) NSDictionary *additionalParameters;
 
 
 ///-------------------------------
-/// @name Creating Route Requests
+/// @name 创建一个路由请求
 ///-------------------------------
 
 
-/**
- Creates a new route request.
- 
- @param URL The URL to route.
- @param options Options bitmask specifying parsing behavior.
- @param additionalParameters Additional parameters to include in any match dictionary created against this request.
- 
- @returns The newly initialized route request.
+/** 创建一个路由请求
+ * @param URL 路由的URL
+ * @param options 一些配置
+ * @param additionalParameters 在针对此请求创建的任何匹配字典中包含的其他参数。
  */
 - (instancetype)initWithURL:(NSURL *)URL options:(JLRRouteRequestOptions)options additionalParameters:(nullable NSDictionary *)additionalParameters NS_DESIGNATED_INITIALIZER;
 

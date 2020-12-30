@@ -8,6 +8,18 @@
 #import "YLRouterService.h"
 #import <JLRoutes/JLRoutes.h>
 
+static inline NSString *routePatternFromUrl(NSString *url){
+    NSString *string = [NSString stringWithFormat:@"%@://",kYLRouterMainScheme];
+    string = @"YLRouterMain://";
+    if ([url hasPrefix:string]) {
+        return [url substringFromIndex:string.length];
+    }
+    return url;
+}
+
+static inline JLRoutes *YLRouter(void){
+    return [JLRoutes routesForScheme:kYLRouterMainScheme];
+}
 
 @implementation YLRouterService
 
@@ -16,18 +28,25 @@
 }
 
 + (BOOL)openURL:(NSString *)url parameters:(NSDictionary *)parameters {
-
-   return [self routeURL:url parameters:parameters];
+    return [self routeURL:url parameters:parameters];
 }
 
 + (void)addRoute:(NSString *)route handler:(BOOL (^)(NSDictionary * _Nonnull parameters))handlerBlock {
-    [JLRoutes.globalRoutes addRoute:route handler:handlerBlock];
+    [YLRouter() addRoute:routePatternFromUrl(route) handler:handlerBlock];
 }
 
 #pragma mark - mark JLRouter
 
-+ (BOOL)routeURL:(NSString*)url parameters:(NSDictionary *)parameters{
-    return [JLRoutes routeURL:[NSURL URLWithString:url] withParameters:parameters];
+/** 如果线上App出现紧急bug了，如何不用JSPatch，就能做到简单的热修复功能？
+ *  可以考虑把页面动态降级成 H5 ；或者是直接换成一个本地的错误界面
+ */
++ (BOOL)routeURL:(NSString *)url parameters:(NSDictionary *)parameters{
+    if ([url hasPrefix:kYLRouterMainScheme]) {
+        return [YLRouter() routeURL:[NSURL URLWithString:routePatternFromUrl(url)] withParameters:parameters];
+    }else if ([url hasPrefix:@"http:"] || [url hasPrefix:@"https:"]){
+        return [YLRouter() routeURL:[NSURL URLWithString:routePatternFromUrl(kYLRouteURLWebview)] withParameters:@{@"url":url}];
+    }
+    return NO;
 }
 
 @end
@@ -68,7 +87,6 @@
             }
         }
     }
-    
     return currentViewController;
 }
 
@@ -76,67 +94,48 @@
 
 
 
+#import "MainTabBarController.h"
 
 @implementation YLRouterService (Handler)
 
 + (void)load {
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
-        //注册 Router
+        /// 注册 Router
         [self performSelectorOnMainThread:@selector(registerRouter) withObject:nil waitUntilDone:false];
     });
 }
 
 + (void)registerRouter {
+//    [JLRoutes setAlwaysTreatsHostAsPathComponent:YES];
     //获取全局 RouterMapInfo
-    NSDictionary* routerMapInfo = [YLRouterConfig configMapInfo];
+    NSDictionary *routerMapInfo = [YLRouterConfig configMapInfo];
     // router 对应控制器路径, 使用其来注册 Route, 当调用当前 Route 时会执行回调; 回调参数 parameters: 在执行 Route 时传入的参数;
     for (NSString* router in routerMapInfo.allKeys) {
         NSDictionary* routerMap = routerMapInfo[router];
-        NSString* className = routerMap[kJSDVCRouteClassName];
-        if (!(className == nil || [className isKindOfClass:NSNull.class] ||
-            ([className isKindOfClass:NSString.class] && className.length == 0))) {
-            /*注册所有控制器 Router, 使用 [JSDVCRouter openURL:JSDVCRouteAppear]; push 到 AppearVC;
-            [JSDVCRouter openURL:JSDVCRouteAppear parameters:@{kJSDVCRouteSegue: kJSDVCRouteSegueModal, @"name": @"jersey"}];  Modal 到 Appear VC 并携带参数 name;
-             */
-            [self addRoute:router handler:^BOOL(NSDictionary * _Nonnull parameters) {
-                //执行路由匹配成功之后,跳转逻辑回调;
-    //            NSMutableDictionary* mapInfo = [NSMutableDictionary dictionaryWithDictionary:parameters];
-    //
-    //            [mapInfo setValue:className forKey:kJSDVCRouteClassName];
-    //            [mapInfo setValue:routerMap[kJSDVCRouteClassTitle] forKey:kJSDVCRouteClassTitle];
-    //            [mapInfo setValue:routerMap[kJSDVCRouteClassFlags] forKey:kJSDVCRouteClassFlags];
-    //            [mapInfo setValue:@(needLogin) forKey:kJSDVCRouteNeedLogin];
-                /*执行 Route 回调; 处理控制器跳转 + 传参;
-                ** routerMap: 当前 route 映射的  routeMap; 我们在 RouterConfig 配置的 Map;
-                ** parameters: 调用 route 时, 传入的参数;
+        NSString* className = routerMap[kYLRouterViewController];
+        if (className && [className isKindOfClass:NSString.class] && className.length) {
+            
+            /// 注册所有控制器 Router
+            [YLRouter() addRoute:routePatternFromUrl(router) handler:^BOOL(NSDictionary * _Nonnull parameters) {
+                /// 执行路由匹配成功之后，跳转逻辑回调;
+                /** 执行 Route 回调; 处理控制器跳转 + 传参;
+                 * routerMap: 当前 route 映射的  routeMap; 我们在 RouterConfig 配置的 Map;
+                 * parameters: 调用 route 时, 传入的参数;
                  */
+                NSLog(@"className ====== %@",className);
+                NSLog(@"routerMap ====== %@",routerMap);
+                NSLog(@"parameters ====== %@",parameters);
                 return [self executeRouterClassName:className routerMap:routerMap parameters:parameters];
             }];
         }
     }
     
-    // 注册 Router 到指定TabBar Index; 使用 [JSDVCRouter openURL:JSDVCRouteCafeTab] 切换到 Cafe Index
-    [self addRoute:@"/rootTab/:index" handler:^BOOL(NSDictionary * _Nonnull parameters) {
-        NSInteger index = [parameters[@"index"] integerValue];
-        // 处理 UITabBarControllerIndex 切换;
-        UITabBarController* tabBarVC = (UITabBarController* )[UIViewController jsd_rootViewController];
-        if ([tabBarVC isKindOfClass:[UITabBarController class]] && index >= 0 && tabBarVC.viewControllers.count >= index) {
-            UIViewController* indexVC = tabBarVC.viewControllers[index];
-            if ([indexVC isKindOfClass:[UINavigationController class]]) {
-                indexVC = ((UINavigationController *)indexVC).topViewController;
-            }
-            //传参
-            [self setupParameters:parameters forViewController:indexVC];
-            tabBarVC.selectedIndex = index;
-            return YES;
-        } else {
-            return NO;
-        }
+    [YLRouter() addRoute:@"mainTabBar/:name" handler:^BOOL(NSDictionary * _Nonnull parameters) {
+        return [MainTabBarController setSelectedVC:parameters[@"name"] parameters:parameters];
     }];
     // 注册返回上层页面 Router, 使用 [JSDVCRouter openURL:kJSDVCRouteSegueBack] 返回上一页 或 [JSDVCRouter openURL:kJSDVCRouteSegueBack parameters:@{kJSDVCRouteBackIndex: @(2)}]  返回前两页
     [self addRoute:kJSDVCRouteSegueBack handler:^BOOL(NSDictionary * _Nonnull parameters) {
-        
         return [self executeBackRouterParameters:parameters];
     }];
 }
@@ -145,7 +144,7 @@
 // 当查找到指定 Router 时, 触发路由回调逻辑; 找不到已注册 Router 则直接返回 NO; 如需要的话, 也可以在这里注册一个全局未匹配到 Router 执行的回调进行异常处理;
 + (BOOL)executeRouterClassName:(NSString *)className routerMap:(NSDictionary* )routerMap parameters:(NSDictionary* )parameters {
     // 拦截 Router 映射参数,是否需要登录才可跳转;
-    BOOL needLogin = [routerMap[kJSDVCRouteClassNeedLogin] boolValue];
+//    BOOL needLogin = [routerMap[kJSDVCRouteClassNeedLogin] boolValue];
 //    if (needLogin && !userIsLogin) {
 //        [JSDVCRouter openURL:JSDVCRouteLogin];
 //        return NO;
@@ -189,21 +188,33 @@
     //vc没有相应属性，但却传了值
         if ([key hasPrefix:@"JLRoute"]==NO &&
             [key hasPrefix:@"JSDVCRoute"]==NO && [params[@"JLRoutePattern"] rangeOfString:[NSString stringWithFormat:@":%@",key]].location==NSNotFound) {
-            NSAssert(hasKey == YES, @"%s: %@ is not property for the key %@",__func__ ,vc,key);
+            NSLog(@"%s: %@ is not property for the key %@",__func__ ,vc,key);
+//            NSAssert(hasKey == YES, @"%s: %@ is not property for the key %@",__func__ ,vc,key);
         }
 #endif
     };
 }
 // 跳转和参数设置;
 + (void)gotoViewController:(UIViewController *)vc parameters:(NSDictionary *)parameters {
+    if (parameters[kYLRouterSegueTabNameKey]) {
+        [MainTabBarController setSelectedVC:parameters[kYLRouterSegueTabNameKey] parameters:@{}];
+    }
     
     UIViewController* currentVC = [UIViewController jsd_findVisibleViewController];
-    NSString *segue = parameters[kJSDVCRouteSegue] ? parameters[kJSDVCRouteSegue] : kJSDVCRouteSeguePush; //  决定 present 或者 Push; 默认值 Push
-    BOOL animated = parameters[kJSDVCRouteAnimated] ? [parameters[kJSDVCRouteAnimated] boolValue] : YES;  // 转场动画;
-    NSLog(@"%s 跳转: %@ %@ %@",__func__ ,currentVC, segue,vc);
     
-    if ([segue isEqualToString:kJSDVCRouteSeguePush]) { //PUSH
+    /// 决定 present 或者 Push; 默认值 Push
+    NSString *segue = parameters[kYLRouterSegueKey] ? parameters[kYLRouterSegueKey] : kYLRouterSeguePush;
+    /// 转场动画
+    BOOL animated = parameters[kYLRouterSegueAnimatedKey] ? [parameters[kYLRouterSegueAnimatedKey] boolValue] : YES;
+    
+    BOOL hidesBottomBarWhenPushed = parameters[kYLRouterSegueHidesBottomBarKey] ? [parameters[kYLRouterSegueHidesBottomBarKey] boolValue] : YES;
+    
+
+
+    if ([segue isEqualToString:kYLRouterSeguePush]) { //PUSH
         if (currentVC.navigationController) {
+            vc.hidesBottomBarWhenPushed = hidesBottomBarWhenPushed;
+
             NSString *backIndexString = [NSString stringWithFormat:@"%@",parameters[kJSDVCRouteBackIndex]];
             UINavigationController* nav = currentVC.navigationController;
             if ([backIndexString isEqualToString:kJSDVCRouteIndexRoot]) {
@@ -251,7 +262,7 @@
 
 // 返回上层页面回调;
 + (BOOL)executeBackRouterParameters:(NSDictionary *)parameters {
-    BOOL animated = parameters[kJSDVCRouteAnimated] ? [parameters[kJSDVCRouteAnimated] boolValue] : YES;
+    BOOL animated = parameters[kYLRouterSegueAnimatedKey] ? [parameters[kYLRouterSegueAnimatedKey] boolValue] : YES;
     NSString *backIndexString = parameters[kJSDVCRouteBackIndex] ? [NSString stringWithFormat:@"%@",parameters[kJSDVCRouteBackIndex]] : nil;  // 指定返回个数, 优先处理此参数;
     id backPage = parameters[kJSDVCRouteBackPage] ? parameters[kJSDVCRouteBackPage] : nil; // 指定返回到某个页面,
     NSInteger backPageOffset = parameters[kJSDVCRouteBackPageOffset] ? [parameters[kJSDVCRouteBackPageOffset] integerValue] : 0; // 指定返回到的页面并进行偏移;

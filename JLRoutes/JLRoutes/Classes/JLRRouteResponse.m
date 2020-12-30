@@ -56,6 +56,7 @@
     }
 }
 
+/// 检查 RouteResponse 是否相等
 - (BOOL)isEqualToRouteResponse:(JLRRouteResponse *)response
 {
     if (self.isMatch != response.isMatch) {

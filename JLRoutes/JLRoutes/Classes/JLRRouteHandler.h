@@ -15,17 +15,17 @@
 NS_ASSUME_NONNULL_BEGIN
 
 
+/** Deeplink，简单讲，就是你在手机上点击一个链接之后，可以直接链接到app内部的某个页面，而不是app正常打开时显示的首页。
+ 不似web，一个链接就可以直接打开web的内页，app的内页打开，必须用到deeplink技术
+ */
+
 @protocol JLRRouteHandlerTarget;
 
 
-/**
- JLRRouteHandler is a helper class for creating handler blocks intended to be passed to an addRoute: call.
- 
- This is specifically useful for cases in which you want a separate object or class to be the handler
- for a deeplink route. An example might be a view controller class that you want to instantiate and present
- in response to a deeplink route.
+/** 封装了 Handler
+ * 这对于你想要一个单独的对象或类作为 deeplink 路由的处理程序的情况特别有用
+ * eg：一个视图控制器类，你想要实例化并呈现它以响应一个 deeplink 路由
  */
-
 @interface JLRRouteHandler : NSObject
 
 /// Unavailable.
@@ -35,8 +35,7 @@ NS_ASSUME_NONNULL_BEGIN
 + (instancetype)new NS_UNAVAILABLE;
 
 
-/**
- Creates and returns a block that calls handleRouteWithParameters: on a weak target objet.
+/** 在弱目标对象上创建并返回一个调用 handleRouteWithParameters: 的块。
  
  The block returned from this method should be passed as the handler block of an addRoute: call.
  
@@ -47,7 +46,10 @@ NS_ASSUME_NONNULL_BEGIN
  @discussion There is no change of ownership of the target object, only a weak pointer (hence 'weakTarget') is captured in the block.
  If the object is deallocated, the handler will no longer be called (but the route will remain registered unless explicitly removed).
  */
-
+// 创建并返回一个在weak属性目标对象上调用handleRouteWithParameters:方法的block。从此方法返回的block应该作为addRoute:的handler block。
+// 参数weakTarget: 应该处理匹配路由的目标对象
+// 返回值 提供的weakTarget的新处理块
+// 讨论：目标对象的拥有者没有变化，只有一个弱指针在block中被捕获。如果该对象被重新分配，则handler将不再被调用(但路由将保持注册，除非明确移除)
 + (BOOL (^__nonnull)(NSDictionary<NSString *, id> *parameters))handlerBlockForWeakTarget:(__weak id <JLRRouteHandlerTarget>)weakTarget;
 
 
@@ -66,38 +68,30 @@ NS_ASSUME_NONNULL_BEGIN
  will be used and owned by the calling application.
  */
 
+// 创建并返回一个创建新实例的targetClass(此targetClass必须遵守JLRRouteHandlerTarget协议)的block，然后在它上调用handleRouteWithParameters:方法。然后创建的对象作为参数传递给完成的block块。从此方法返回的block应该作为addRoute:的handler block。
+// 参数targetClass: 要处理路由请求的目标类。必须遵守JLRRouteHandlerTarget协议。
+// 参数completionHandler: 创建了一个新targetClass实例后调用的完成块。
+// 返回值 用于创建targetClass实例的新的handler block。
+// 讨论：JLRoutes不会保留或拥有此创建的对象。预计通过完成的回调传递的创建对象将被调用应用程序使用并拥有。
 + (BOOL (^__nonnull)(NSDictionary<NSString *, id> *parameters))handlerBlockForTargetClass:(Class)targetClass completion:(BOOL (^)(id <JLRRouteHandlerTarget> createdObject))completionHandler;
 
 @end
 
 
-/**
- Classes conforming to the JLRRouteHandlerTarget protocol can be used as a route handler target.
- */
-
+/// 遵守此协议的类可以被用来作为路由处理目标
 @protocol JLRRouteHandlerTarget <NSObject>
 
 @optional
 
-/**
- Initialize an instance of the conforming class by passing matched route parameters from a JLRoutes route.
- 
- @param parameters The match parameters passed to use when initializing the object. These are passed from a JLRoutes handler block.
- 
- @returns An initialized instance of the conforming class.
+/** 从JLRoutes路由里通过传递匹配的路由参数初始化一个遵守此协议的类的实例
+ * @param parameters 初始化对象时传递的匹配参数。这些都是从JLRoutes 的 handlerBlock 中传递的
  */
-
 - (instancetype)initWithRouteParameters:(NSDictionary <NSString *, id> *)parameters;
 
-
-/**
- Called for a successful route match.
- 
- @param parameters The match parameters passed to the handler block.
- 
- @returns YES if the route was handled, NO if matching a different route should be attempted.
+/** 被匹配的路由调用
+ * @param parameters 传递给 handlerBlock 的参数
+ * @returns 如果路由已经处理则返回 YES，如果应该尝试匹配不同的路由则返回 NO
  */
-
 - (BOOL)handleRouteWithParameters:(NSDictionary<NSString *, id> *)parameters;
 
 @end

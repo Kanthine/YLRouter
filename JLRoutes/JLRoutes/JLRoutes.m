@@ -28,11 +28,11 @@ NSString *const JLRoutesGlobalRoutesScheme = @"JLRoutesGlobalRoutesScheme";
 static NSMutableDictionary *JLRGlobal_routeControllersMap = nil;
 
 
-// global options (configured in +initialize)
-static BOOL JLRGlobal_verboseLoggingEnabled;
-static BOOL JLRGlobal_shouldDecodePlusSymbols;
+// 全局配置 (configured in +initialize)
+static BOOL JLRGlobal_verboseLoggingEnabled;///是否开启日志
+static BOOL JLRGlobal_shouldDecodePlusSymbols;///是否替换符号 +
 static BOOL JLRGlobal_alwaysTreatsHostAsPathComponent;
-static Class JLRGlobal_routeDefinitionClass;
+static Class JLRGlobal_routeDefinitionClass;/// 默认类
 
 
 @interface JLRoutes ()
@@ -99,19 +99,19 @@ static Class JLRGlobal_routeDefinitionClass;
 {
     JLRoutes *routesController = nil;
     
+    //全局之创建一个MAP
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
         JLRGlobal_routeControllersMap = [[NSMutableDictionary alloc] init];
     });
     
+    //用scheme作为key，然后JLRoutes作为value值，JLRoutes中有可变数组来存储不同的URL生成的模型对象，JLRRouteDefinition；
     if (!JLRGlobal_routeControllersMap[scheme]) {
         routesController = [[self alloc] init];
         routesController.scheme = scheme;
         JLRGlobal_routeControllersMap[scheme] = routesController;
     }
-    
     routesController = JLRGlobal_routeControllersMap[scheme];
-    
     return routesController;
 }
 
@@ -128,40 +128,49 @@ static Class JLRGlobal_routeDefinitionClass;
 }
 
 
-#pragma mark - Registering Routes
+#pragma mark - 注册 Routes
 
-- (void)addRoute:(JLRRouteDefinition *)routeDefinition
-{
+- (void)addRoute:(JLRRouteDefinition *)routeDefinition{
     [self _registerRoute:routeDefinition];
 }
 
-- (void)addRoute:(NSString *)routePattern handler:(BOOL (^)(NSDictionary<NSString *, id> *parameters))handlerBlock
-{
+- (void)addRoute:(NSString *)routePattern handler:(BOOL (^)(NSDictionary<NSString *, id> *parameters))handlerBlock{
     [self addRoute:routePattern priority:0 handler:handlerBlock];
 }
 
-- (void)addRoutes:(NSArray<NSString *> *)routePatterns handler:(BOOL (^)(NSDictionary<NSString *, id> *parameters))handlerBlock
-{
+- (void)addRoutes:(NSArray<NSString *> *)routePatterns handler:(BOOL (^)(NSDictionary<NSString *, id> *parameters))handlerBlock{
     for (NSString *routePattern in routePatterns) {
         [self addRoute:routePattern handler:handlerBlock];
     }
 }
 
-- (void)addRoute:(NSString *)routePattern priority:(NSUInteger)priority handler:(BOOL (^)(NSDictionary<NSString *, id> *parameters))handlerBlock
-{
+/** 注册路由
+ * 1、将 routePattern 展开为可选路由模式，如：@"/path/:thing/(/a)(/b)(/c)"
+ * 2、根据 routePattern、priority、handlerBlock 封装一个路由模型 JLRRouteDefinition
+ * 3、如果有可选路由模式，则注册可选路由；并结束不再向下执行
+ * 4、如果没有可选路由，则注册 routePattern 对应的路由模型 JLRRouteDefinition
+ */
+- (void)addRoute:(NSString *)routePattern priority:(NSUInteger)priority handler:(BOOL (^)(NSDictionary<NSString *, id> *parameters))handlerBlock{
+    
+    // 为 routePattern 展开可选路由模式
     NSArray <NSString *> *optionalRoutePatterns = [JLRParsingUtilities expandOptionalRoutePatternsForPattern:routePattern];
+
+    // 根据入参创建 JLRRouteDefinition 路由模型对象
     JLRRouteDefinition *route = [[JLRGlobal_routeDefinitionClass alloc] initWithPattern:routePattern priority:priority handlerBlock:handlerBlock];
     
+    // 如果optionalRoutePatterns大于0, 即有可选路由模式，注册可选路由
     if (optionalRoutePatterns.count > 0) {
-        // there are optional params, parse and add them
+        /// 有可选参数，需要解析和添加它们
         for (NSString *pattern in optionalRoutePatterns) {
             JLRRouteDefinition *optionalRoute = [[JLRGlobal_routeDefinitionClass alloc] initWithPattern:pattern priority:priority handlerBlock:handlerBlock];
-            [self _registerRoute:optionalRoute];
+            [self _registerRoute:optionalRoute];/// 注册可选路由
             [self _verboseLog:@"Automatically created optional route: %@", optionalRoute];
         }
+        // 如果有可选路由模式，则不需注册 routePattern
         return;
     }
     
+    // 如果没有可选路由模式，注册 routePattern
     [self _registerRoute:route];
 }
 
@@ -205,11 +214,13 @@ static Class JLRGlobal_routeDefinitionClass;
 
 #pragma mark - Routing URLs
 
+/// 如果提供的 URL 可以成功匹配任一个已注册的路由，则返回YES。否则返回NO。
 + (BOOL)canRouteURL:(NSURL *)URL
 {
     return [[self _routesControllerForURL:URL] canRouteURL:URL];
 }
 
+/// 如果提供的 ULR 可以成功为当前scheme匹配任一个已注册的路由，则返回YES。否则返回NO。
 - (BOOL)canRouteURL:(NSURL *)URL
 {
     return [self _routeURL:URL withParameters:nil executeRouteBlock:NO];
@@ -238,102 +249,114 @@ static Class JLRGlobal_routeDefinitionClass;
 
 #pragma mark - Private
 
-+ (instancetype)_routesControllerForURL:(NSURL *)URL
-{
+/// 根据 URL 查找到对应的路由器（ scheme ）
++ (instancetype)_routesControllerForURL:(NSURL *)URL{
     if (URL == nil) {
         return nil;
     }
-    
     return JLRGlobal_routeControllersMap[URL.scheme] ?: [JLRoutes globalRoutes];
 }
 
-- (void)_registerRoute:(JLRRouteDefinition *)route
-{
+/** 注册一个路由
+ * 1、搜索现有路由，按优先级插入JLRoutes的数组中，优先级高的排列在前面
+ * 2、为路由模型对象设置 scheme
+ */
+- (void)_registerRoute:(JLRRouteDefinition *)route{
     if (route.priority == 0 || self.mutableRoutes.count == 0) {
         [self.mutableRoutes addObject:route];
     } else {
         NSUInteger index = 0;
         BOOL addedRoute = NO;
-        
-        // search through existing routes looking for a lower priority route than this one
         for (JLRRouteDefinition *existingRoute in [self.mutableRoutes copy]) {
             if (existingRoute.priority < route.priority) {
-                // if found, add the route after it
                 [self.mutableRoutes insertObject:route atIndex:index];
                 addedRoute = YES;
                 break;
             }
             index++;
         }
-        
-        // if we weren't able to find a lower priority route, this is the new lowest priority route (or same priority as self.routes.lastObject) and should just be added
         if (!addedRoute) {
             [self.mutableRoutes addObject:route];
         }
     }
     
+    // 将JLRoutes的scheme赋值给传递进来的路由模型对象的scheme
     [route didBecomeRegisteredForScheme:self.scheme];
 }
 
-- (BOOL)_routeURL:(NSURL *)URL withParameters:(NSDictionary *)parameters executeRouteBlock:(BOOL)executeRouteBlock
-{
+/** 调起路由，执行 handlerBlock
+ * 1、根据 URL 创建一个请求 JLRRouteRequest
+ * 2、在路由器的数组 mutableRoutes 中匹配已注册的对应路由，
+ *     如果不匹配，中断当前循环，进入下一轮查询
+ *     如果匹配，但没有执行 executeRouteBlock 则立即返回
+ *     如果匹配，执行 handlerBlock；不再向下执行！
+ * 3、如果找不到匹配的路由，尝试去全局路由来匹配
+ * 4、如果还是找不到匹配的路由，回调 unmatchedURLHandler()
+ * 5、返回路由结果
+ */
+/// 根据 URL 创建一个 JLRRouteRequest，然后在JLRoutes的数组中依次查找，直到找到一个匹配的然后获取parameters，执行Handler
+- (BOOL)_routeURL:(NSURL *)URL withParameters:(NSDictionary *)parameters executeRouteBlock:(BOOL)executeRouteBlock{
     if (!URL) {
         return NO;
     }
     
     [self _verboseLog:@"Trying to route URL %@", URL];
     
-    BOOL didRoute = NO;
+    BOOL didRoute = NO;/// 标记是否已经路由
     
     JLRRouteRequestOptions options = [self _routeRequestOptions];
+    
+    /// 创建路由请求
     JLRRouteRequest *request = [[JLRRouteRequest alloc] initWithURL:URL options:options additionalParameters:parameters];
     
+    /// 遍历已注册路由，查找能匹配的路由，执行 handlerBlock
     for (JLRRouteDefinition *route in [self.mutableRoutes copy]) {
-        // check each route for a matching response
+        // 检查每个路由是否有匹配的响应
         JLRRouteResponse *response = [route routeResponseForRequest:request];
         if (!response.isMatch) {
             continue;
         }
         
-        [self _verboseLog:@"Successfully matched %@", route];
+        [self _verboseLog:@"匹配成功 %@", route];
         
+        // 没有执行block立即返回
         if (!executeRouteBlock) {
-            // if we shouldn't execute but it was a match, we're done now
             return YES;
         }
         
         [self _verboseLog:@"Match parameters are %@", response.parameters];
         
-        // Call the handler block
+        // 调用路由模型对象 handlerBlock
         didRoute = [route callHandlerBlockWithParameters:response.parameters];
         
         if (didRoute) {
-            // if it was routed successfully, we're done - otherwise, continue trying to route
+            /// 如果成功路由，中断循环
             break;
         }
     }
     
     if (!didRoute) {
-        [self _verboseLog:@"Could not find a matching route"];
+        [self _verboseLog:@"找不到匹配的路由"];
     }
     
-    // if we couldn't find a match and this routes controller specifies to fallback and its also not the global routes controller, then...
+     /// 如果找不到匹配的路由，尝试去全局路由来匹配
     if (!didRoute && self.shouldFallbackToGlobalRoutes && ![self _isGlobalRoutesController]) {
         [self _verboseLog:@"Falling back to global routes..."];
         didRoute = [[JLRoutes globalRoutes] _routeURL:URL withParameters:parameters executeRouteBlock:executeRouteBlock];
     }
     
-    // if, after everything, we did not route anything and we have an unmatched URL handler, then call it
+    /// 如果还是找不到匹配的路由，回调 unmatchedURLHandler()
     if (!didRoute && executeRouteBlock && self.unmatchedURLHandler) {
         [self _verboseLog:@"Falling back to the unmatched URL handler"];
         self.unmatchedURLHandler(self, URL, parameters);
     }
     
+    // 返回是否已路由
     return didRoute;
 }
 
-- (BOOL)_isGlobalRoutesController
-{
+/// 判断当前对象是否是全局路由器
+- (BOOL)_isGlobalRoutesController{
     return [self.scheme isEqualToString:JLRoutesGlobalRoutesScheme];
 }
 
@@ -364,55 +387,46 @@ static Class JLRGlobal_routeDefinitionClass;
     if (JLRGlobal_alwaysTreatsHostAsPathComponent) {
         options |= JLRRouteRequestOptionTreatHostAsPathComponent;
     }
-    
     return options;
 }
 
 @end
 
 
-#pragma mark - Global Options
+#pragma mark - 全局配置
 
 @implementation JLRoutes (GlobalOptions)
 
-+ (void)setVerboseLoggingEnabled:(BOOL)loggingEnabled
-{
++ (void)setVerboseLoggingEnabled:(BOOL)loggingEnabled{
     JLRGlobal_verboseLoggingEnabled = loggingEnabled;
 }
 
-+ (BOOL)isVerboseLoggingEnabled
-{
++ (BOOL)isVerboseLoggingEnabled{
     return JLRGlobal_verboseLoggingEnabled;
 }
 
-+ (void)setShouldDecodePlusSymbols:(BOOL)shouldDecode
-{
++ (void)setShouldDecodePlusSymbols:(BOOL)shouldDecode{
     JLRGlobal_shouldDecodePlusSymbols = shouldDecode;
 }
 
-+ (BOOL)shouldDecodePlusSymbols
-{
++ (BOOL)shouldDecodePlusSymbols{
     return JLRGlobal_shouldDecodePlusSymbols;
 }
 
-+ (void)setAlwaysTreatsHostAsPathComponent:(BOOL)treatsHostAsPathComponent
-{
++ (void)setAlwaysTreatsHostAsPathComponent:(BOOL)treatsHostAsPathComponent{
     JLRGlobal_alwaysTreatsHostAsPathComponent = treatsHostAsPathComponent;
 }
 
-+ (BOOL)alwaysTreatsHostAsPathComponent
-{
++ (BOOL)alwaysTreatsHostAsPathComponent{
     return JLRGlobal_alwaysTreatsHostAsPathComponent;
 }
 
-+ (void)setDefaultRouteDefinitionClass:(Class)routeDefinitionClass
-{
++ (void)setDefaultRouteDefinitionClass:(Class)routeDefinitionClass{
     NSParameterAssert([routeDefinitionClass isSubclassOfClass:[JLRRouteDefinition class]]);
     JLRGlobal_routeDefinitionClass = routeDefinitionClass;
 }
 
-+ (Class)defaultRouteDefinitionClass
-{
++ (Class)defaultRouteDefinitionClass{
     return JLRGlobal_routeDefinitionClass;
 }
 

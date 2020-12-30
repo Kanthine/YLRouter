@@ -15,31 +15,34 @@
 NS_ASSUME_NONNULL_BEGIN
 
 
-/**
- JLRRouteResponse is the response from attempting to route a JLRRouteRequest.
+/** JLRRouteResponse 是对 JLRRouteRequest 响应结果的封装：
+ * 包括匹配的参数（就是block返回的字典值）、是否匹配（输入的URL会循环匹配之前注册好的URL，如果匹配上返回YES，就会执行block）等内容
  */
 
 @interface JLRRouteResponse : NSObject <NSCopying>
 
-/// Indicates if the response is a match or not.
+/// 指示响应是否匹配
 @property (nonatomic, assign, readonly, getter=isMatch) BOOL match;
 
-/// The match parameters (or nil for an invalid response).
+/// 匹配参数；响应无效时为 nil
 @property (nonatomic, copy, readonly, nullable) NSDictionary *parameters;
 
-/// Check for route response equality
+/// 检查 RouteResponse 是否相等
 - (BOOL)isEqualToRouteResponse:(JLRRouteResponse *)response;
 
 
 ///-------------------------------
-/// @name Creating Responses
+/// @name 创建响应
 ///-------------------------------
 
 
-/// Creates an invalid match response.
+/// 不匹配时， 返回一个无效的响应
 + (instancetype)invalidMatchResponse;
 
-/// Creates a valid match response with the given parameters.
+/** 根据指定的参数获取匹配的有效响应
+ * @param parameters 指定的参数
+ * @note 该响应有效
+ */
 + (instancetype)validMatchResponseWithParameters:(NSDictionary *)parameters;
 
 /// Unavailable, please use +invalidMatchResponse or +validMatchResponseWithParameters: instead.

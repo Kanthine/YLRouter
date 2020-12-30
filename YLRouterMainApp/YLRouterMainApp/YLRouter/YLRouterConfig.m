@@ -8,8 +8,25 @@
 #import "YLRouterConfig.h"
 
 
-NSString* const kJSDVCRouteSegue = @"JSDVCRouteSegue";
-NSString* const kJSDVCRouteAnimated = @"JSDVCRouteAnimated";
+NSString *const kYLRouterMainScheme = @"YLRouterMain";
+
+/********* 控制器跳转时的一些参数 ******/
+NSString* const kYLRouterViewController = @"viewController";
+NSString* const kYLRouterControllerTitle = @"navigationItemTitle";
+NSString* const kYLRouterUserPermissionLevel = @"User_Permission_Level";
+NSString* const kJSDVCRouteClassFlags = @"flags";
+
+
+//控制器跳转相关参数配置
+NSString* const kYLRouterSegueKey = @"kYLRouterSegueKey";
+NSString* const kYLRouterSeguePush = @"kYLRouterSeguePush";
+NSString* const kYLRouterSegueModal = @"kYLRouterSegueModal";
+
+NSString* const kYLRouterSegueAnimatedKey = @"kYLRouterSegueAnimatedKey";
+NSString* const kYLRouterSegueHidesBottomBarKey = @"kYLRouterSegueHidesBottomBarKey";
+NSString* const kYLRouterSegueTabNameKey = @"kYLRouterSegueTabNameKey";
+
+
 NSString* const kJSDVCRouteBackIndex = @"JSDVCRouteBackIndex";
 NSString* const kJSDVCRouteBackPage = @"JSDVCRouteBackPage";
 NSString* const kJSDVCRouteBackPageOffset = @"JSDVCRouteBackPageOffset";
@@ -18,72 +35,47 @@ NSString* const kJSDVCRouteNeedLogin = @"JSDVCRouteNeedLogin";
 NSString* const kJSDVCRouteSegueNeedNavigation = @"JSDVCRouteNeedNavigation";
 
 NSString* const kJSDVCRouteIndexRoot = @"root";
-NSString* const kJSDVCRouteSeguePush = @"push";
-NSString* const kJSDVCRouteSegueModal = @"modal";
 NSString* const kJSDVCRouteSegueBack = @"/back";
 
-NSString* const kJSDVCRouteClassName = @"class";
-NSString* const kJSDVCRouteClassTitle = @"title";
-NSString* const kJSDVCRouteClassFlags = @"flags";
-NSString* const kJSDVCRouteClassNeedLogin = @"needLogin";
 
-NSString* const JSDVCRouteHomeTab = @"/rootTab/0";
-NSString* const JSDVCRouteCafeTab = @"/rootTab/1";
-NSString* const JSDVCRouteCoffeeTab = @"/rootTab/2";
-NSString* const JSDVCRouteMyCenterTab = @"/rootTab/3";
+//TabBar 下控制器
+NSString* const kYLRouteURL_Tab_User = @"YLRouterMain://mainTabBar/User";
+NSString* const kYLRouteURL_Tab_News = @"YLRouterMain://mainTabBar/News";
 
 
 ///组件化： SDK 内的控制器
-NSString* const YLRouteURLReader = @"/reader";
-NSString* const YLRouteURLReader_1 = @"/reader_1";
+NSString* const kYLRouteURLReader = @"YLRouterMain://reader";
+NSString* const kYLRouteURLReader_1 = @"YLRouterMain://reader_1";
 
 //App 内相关控制器
-NSString* const YLRouteURLWebview = @"/webView";
-
-
-
-
-//NSString* const YLRouteURLWebview = @"YLRouterMain://webView";
-NSString* const JSDVCRouteLogin = @"/login";
-NSString* const JSDVCRouteRegister = @"/register";
-NSString* const JSDVCRouteAppear = @"/home/Appear";
-NSString* const JSDVCRouteAppearNotNeedLogin = @"/home/AppearNotNeedLogin";
+NSString* const kYLRouteURLWebview = @"YLRouterMain://webView";
+NSString* const kYLRouteURL_User_Set = @"YLRouterMain://User/set";
+NSString* const kYLRouteURL_User_Set_NickName = @"YLRouterMain://User/set/nickName";
 
 @implementation YLRouterConfig
 
 + (NSDictionary *)configMapInfo {
     
     return @{
-        YLRouteURLWebview: @{kJSDVCRouteClassName: @"YLWebViewController",
-                             kJSDVCRouteClassTitle: @"WebView",
+        kYLRouteURLWebview: @{kYLRouterViewController: @"YLWebViewController",
+                             kYLRouterControllerTitle: @"WebView",
                              kJSDVCRouteClassFlags: @"",
-                             kJSDVCRouteClassNeedLogin: @"",
+                             kYLRouterUserPermissionLevel: @(0),
         },
-        YLRouteURLReader: @{kJSDVCRouteClassName: @"YLReaderViewController",
-                             kJSDVCRouteClassTitle: @"阅读器",
+        kYLRouteURLReader: @{kYLRouterViewController: @"YLReaderViewController",
+                            kYLRouterControllerTitle: @"阅读器",
                              kJSDVCRouteClassFlags: @"",
-                             kJSDVCRouteClassNeedLogin: @"",
+                            kYLRouterUserPermissionLevel: @(0),
         },
-        YLRouteURLReader_1: @{kJSDVCRouteClassName: @"YLReaderPageController",
-                             kJSDVCRouteClassTitle: @"阅读器",
-                             kJSDVCRouteClassFlags: @"",
-                             kJSDVCRouteClassNeedLogin: @"",
-        },
-        JSDVCRouteRegister: @{kJSDVCRouteClassName: @"JSDRegisterVC",
-                              kJSDVCRouteClassTitle: @"注册",
+        kYLRouteURL_User_Set: @{kYLRouterViewController: @"UserSetViewController",
+                               kYLRouterControllerTitle: @"用户设置",
                               kJSDVCRouteClassFlags: @"",
-                              kJSDVCRouteClassNeedLogin: @"",
+                               kYLRouterUserPermissionLevel: @(0),
         },
-        JSDVCRouteAppear: @{kJSDVCRouteClassName: @"JSDAppearVC",
-                              kJSDVCRouteClassTitle: @"测试OpenRouter:",
+        kYLRouteURL_User_Set_NickName: @{kYLRouterViewController: @"UserSetNickNameViewController",
+                               kYLRouterControllerTitle: @"用户昵称设置",
                               kJSDVCRouteClassFlags: @"",
-                              kJSDVCRouteClassNeedLogin: @"1",
-            
-        },
-        JSDVCRouteAppearNotNeedLogin: @{kJSDVCRouteClassName: @"JSDAppearNotNeedLogInVC",
-                              kJSDVCRouteClassTitle: @"测试OpenRouterNotNeedLogin:",
-                              kJSDVCRouteClassFlags: @"",
-                              kJSDVCRouteClassNeedLogin: @"",
+                               kYLRouterUserPermissionLevel: @(0),
         },
     };
 }

@@ -85,22 +85,24 @@
     return YES;
 }
 
-- (NSUInteger)hash
-{
+- (NSUInteger)hash{
     return self.pattern.hash ^ @(self.priority).hash ^ self.scheme.hash ^ self.patternPathComponents.hash;
 }
 
 #pragma mark - Main API
 
-- (JLRRouteResponse *)routeResponseForRequest:(JLRRouteRequest *)request
-{
+/// 匹配阶段通过对注册内容进行查找，找到匹配项。并对匹配内容进行拼接，完成匹配pattern的匹配和变量赋值的操作
+- (JLRRouteResponse *)routeResponseForRequest:(JLRRouteRequest *)request{
+    /// 是否包含通配符 '*'
     BOOL patternContainsWildcard = [self.patternPathComponents containsObject:@"*"];
     
+    /// 不包含通配符，路径组件的数量又不一样，返回一个无效的响应
     if (request.pathComponents.count != self.patternPathComponents.count && !patternContainsWildcard) {
-        // definitely not a match, nothing left to do
         return [JLRRouteResponse invalidMatchResponse];
     }
     
+    /// 3. 通过注册的patternComponent “:”来作为一个key，拿到对应的repuest中的patternComponent，组成一个键值对;
+    /// 4. 如果非包含“:”的patternComponent与repuest中的patternComponent不符合，返回不匹配。
     NSDictionary *routeVariables = [self routeVariablesForRequest:request];
     
     if (routeVariables != nil) {
@@ -108,17 +110,15 @@
         NSDictionary *matchParams = [self matchParametersForRequest:request routeVariables:routeVariables];
         return [JLRRouteResponse validMatchResponseWithParameters:matchParams];
     } else {
-        // nil variables indicates no match, so return an invalid match response
+        /// 没有匹配的变量，返回一个无效响应
         return [JLRRouteResponse invalidMatchResponse];
     }
 }
 
-- (BOOL)callHandlerBlockWithParameters:(NSDictionary *)parameters
-{
+- (BOOL)callHandlerBlockWithParameters:(NSDictionary *)parameters{
     if (self.handlerBlock == nil) {
         return YES;
     }
-    
     return self.handlerBlock(parameters);
 }
 
@@ -128,8 +128,12 @@
     self.scheme = scheme;
 }
 
-#pragma mark - Parsing Route Variables
+#pragma mark - 解析 Route 变量
 
+/** 解析并返回指定请求的路由变量
+ * @param request 用于解析变量值的请求
+ * 如果匹配，则解析routeVariables ;如果不匹配，则解析路由变量为nil
+ */
 - (NSDictionary <NSString *, NSString *> *)routeVariablesForRequest:(JLRRouteRequest *)request
 {
     NSMutableDictionary *routeVariables = [NSMutableDictionary dictionary];
@@ -140,7 +144,6 @@
     for (NSString *patternComponent in self.patternPathComponents) {
         NSString *URLComponent = nil;
         BOOL isPatternComponentWildcard = [patternComponent isEqualToString:@"*"];
-        
         if (index < [request.pathComponents count]) {
             URLComponent = request.pathComponents[index];
         } else if (!isPatternComponentWildcard) {
@@ -148,11 +151,14 @@
             isMatch = NO;
             break;
         }
-        
         if ([patternComponent hasPrefix:@":"]) {
             // this is a variable, set it in the params
             NSAssert(URLComponent != nil, @"URLComponent cannot be nil");
+            
+            ///当字符串长度大于 1 时，去掉字符串开头的 ':' 与 字符串结尾的 '#'
             NSString *variableName = [self routeVariableNameForValue:patternComponent];
+            
+            ///对 URLComponent 解码，去掉字符串结尾的 '#'
             NSString *variableValue = [self routeVariableValueForValue:URLComponent];
             
             // Consult the parsing utilities as well to do any other standard variable transformations
@@ -181,40 +187,42 @@
     }
     
     if (!isMatch) {
-        // Return nil to indicate that there was not a match
+        // 如果没有匹配项，返回 nil
         routeVariables = nil;
     }
-    
     return [routeVariables copy];
 }
 
-- (NSString *)routeVariableNameForValue:(NSString *)value
-{
+/**
+ * 当字符串长度大于 1 时，去掉字符串开头的 ':'
+ * 当字符串长度大于 1 时，去掉字符串结尾的 '#'
+ */
+- (NSString *)routeVariableNameForValue:(NSString *)value{
     NSString *name = value;
-    
+    /// 去掉字符串开头的 ':'
     if (name.length > 1 && [name characterAtIndex:0] == ':') {
-        // Strip off the ':' in front of param names
         name = [name substringFromIndex:1];
     }
     
+    /// 去掉字符串结尾的 '#'
     if (name.length > 1 && [name characterAtIndex:name.length - 1] == '#') {
-        // Strip of trailing fragment
         name = [name substringToIndex:name.length - 1];
     }
     
     return name;
 }
 
-- (NSString *)routeVariableValueForValue:(NSString *)value
-{
-    // Remove percent encoding
+/**
+ * 如果字符串UTF-8 编码，则解码
+ * 当字符串长度大于 1 时，去掉字符串结尾的 '#'
+ */
+- (NSString *)routeVariableValueForValue:(NSString *)value{
+    /// 将所有 encoded UTF-8 编码的字符，还原为字符串
     NSString *var = [value stringByRemovingPercentEncoding];
-    
+    /// 去掉字符串结尾的 '#'
     if (var.length > 1 && [var characterAtIndex:var.length - 1] == '#') {
-        // Strip of trailing fragment
         var = [var substringToIndex:var.length - 1];
     }
-    
     return var;
 }
 

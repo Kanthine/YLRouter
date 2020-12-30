@@ -7,7 +7,7 @@
 
 
 #import "AppDelegate.h"
-#import "ViewController.h"
+#import "MainTabBarController.h"
 
 @interface AppDelegate ()
 
@@ -22,12 +22,16 @@
     self.window = [[UIWindow alloc] initWithFrame:UIScreen.mainScreen.bounds];
     [self.window makeKeyAndVisible];
     
-    ViewController *vc = [[ViewController alloc] init];
-    UINavigationController *nav = [[UINavigationController alloc] initWithRootViewController:vc];
-    self.window.rootViewController = nav;
+    MainTabBarController *mainTabBar = [[MainTabBarController alloc] init];
+    self.window.rootViewController = mainTabBar;
     
     return YES;
 }
 
+- (BOOL)application:(UIApplication *)app openURL:(NSURL *)url options:(NSDictionary<UIApplicationOpenURLOptionsKey, id> *)options{
+    NSLog(@"url ==== %@",url);
+    return YES;
+    return [YLRouterService openURL:url.absoluteString];
+}
 
 @end
