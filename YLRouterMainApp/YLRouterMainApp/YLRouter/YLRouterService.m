@@ -123,9 +123,6 @@ static inline JLRoutes *YLRouter(void){
                  * routerMap: 当前 route 映射的  routeMap; 我们在 RouterConfig 配置的 Map;
                  * parameters: 调用 route 时, 传入的参数;
                  */
-                NSLog(@"className ====== %@",className);
-                NSLog(@"routerMap ====== %@",routerMap);
-                NSLog(@"parameters ====== %@",parameters);
                 return [self executeRouterClassName:className routerMap:routerMap parameters:parameters];
             }];
         }

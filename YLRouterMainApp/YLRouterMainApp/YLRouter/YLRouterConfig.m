@@ -45,10 +45,9 @@ NSString* const kYLRouteURL_Tab_News = @"YLRouterMain://mainTabBar/News";
 
 ///组件化： SDK 内的控制器
 NSString* const kYLRouteURLReader = @"YLRouterMain://reader";
-NSString* const kYLRouteURLReader_1 = @"YLRouterMain://reader_1";
 
 //App 内相关控制器
-NSString* const kYLRouteURLWebview = @"YLRouterMain://webView";
+NSString* const kYLRouteURLWebview = @"YLRouterMain://webView?usert=123456&nickName=Hello";
 NSString* const kYLRouteURL_User_Set = @"YLRouterMain://User/set";
 NSString* const kYLRouteURL_User_Set_NickName = @"YLRouterMain://User/set/nickName";
 

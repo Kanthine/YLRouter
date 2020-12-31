@@ -26,15 +26,16 @@
 
 @implementation JLRRouteRequest
 
-/** NSURLComponents 快捷高效的提取URL中的各个参数
- *
- <NSURLComponents 0x6000035b9490> {scheme = YLRouterMain, user = (null), password = (null), host = webView, port = (null), path = , query = (null), fragment = (null)}
- <NSURLComponents 0x28300fb10> {scheme = (null), user = (null), password = (null), host = (null), port = (null), path = ://learnPark, query = (null), fragment = (null)}
 
- 
+/** JLRRouteRequest 的初始化方法
+ *  1、使用 NSURLComponents 将一个 URL 拆分为 scheme、host、port、path、query、fragment 等；
+ *  2、 将 components.host 拼接到 path 中 ？
+ *          条件一：components.host.length > 0；
+ *          条件二：（components.host 不是 localhost 并且 components.host 不包含 .） || 配置项
+ *     如果将 components.host 拼接到 path 中，则 JLRRouteRequest.pathComponents 包含 host 并且 包含 path
+ *  3、 将 URL 的附带参数 components.queryItems 转为字典格式 JLRRouteRequest.queryParams
  */
-- (instancetype)initWithURL:(NSURL *)URL options:(JLRRouteRequestOptions)options additionalParameters:(nullable NSDictionary *)additionalParameters
-{
+- (instancetype)initWithURL:(NSURL *)URL options:(JLRRouteRequestOptions)options additionalParameters:(nullable NSDictionary *)additionalParameters{
     if ((self = [super init])) {
         self.URL = URL;
         self.options = options;
@@ -44,13 +45,16 @@
         
         NSURLComponents *components = [NSURLComponents componentsWithString:[self.URL absoluteString]];
         
-        if (components.host.length > 0 && (treatsHostAsPathComponent || (![components.host isEqualToString:@"localhost"] && [components.host rangeOfString:@"."].location == NSNotFound))) {
-            // convert the host to "/" so that the host is considered a path component
+        /// 将 host 拼接到 path 中
+        // host 不是 localhost 且 host 不包含 .
+        if (components.host.length > 0 &&
+            (treatsHostAsPathComponent ||
+             (![components.host isEqualToString:@"localhost"] && [components.host rangeOfString:@"."].location == NSNotFound))) {
+            // 将 host 转为一个路径组件
             NSString *host = [components.percentEncodedHost copy];
             components.host = @"/";
             components.percentEncodedPath = [host stringByAppendingPathComponent:(components.percentEncodedPath ?: @"")];
         }
-        
         NSString *path = [components percentEncodedPath];
         
         // handle fragment if needed
@@ -78,41 +82,38 @@
             }
         }
         
-        // strip off leading slash so that we don't have an empty first path component
+        // 去掉开头的斜杠，这样第一个路径组件不会为空
         if (path.length > 0 && [path characterAtIndex:0] == '/') {
             path = [path substringFromIndex:1];
         }
         
-        // strip off trailing slash for the same reason
+        // 去掉结尾的斜杠，这样最后一个路径组件不会为空
         if (path.length > 0 && [path characterAtIndex:path.length - 1] == '/') {
             path = [path substringToIndex:path.length - 1];
         }
-        
-        // split apart into path components
+        // 分割 path
         self.pathComponents = [path componentsSeparatedByString:@"/"];
         
-        // convert query items into a dictionary
+        // 将 URL 的附带参数转为字典格式
         NSArray <NSURLQueryItem *> *queryItems = [components queryItems] ?: @[];
         NSMutableDictionary *queryParams = [NSMutableDictionary dictionary];
         for (NSURLQueryItem *item in queryItems) {
             if (item.value == nil) {
                 continue;
             }
-            
             if (queryParams[item.name] == nil) {
-                // first time seeing a param with this name, set it
+                // 第一次设置键值
                 queryParams[item.name] = item.value;
             } else if ([queryParams[item.name] isKindOfClass:[NSArray class]]) {
                 // already an array of these items, append it
                 NSArray *values = (NSArray *)(queryParams[item.name]);
                 queryParams[item.name] = [values arrayByAddingObject:item.value];
             } else {
-                // existing non-array value for this key, create an array
+                // 再次遇见该键，将多组值组成一个数组
                 id existingValue = queryParams[item.name];
                 queryParams[item.name] = @[existingValue, item.value];
             }
         }
-        
         self.queryParams = [queryParams copy];
     }
     return self;
@@ -120,7 +121,7 @@
 
 - (NSString *)description
 {
-    return [NSString stringWithFormat:@"<%@ %p> - URL: %@", NSStringFromClass([self class]), self, [self.URL absoluteString]];
+    return [NSString stringWithFormat:@"<%@ %p> - URL: %@\n pathComponents : %@\n queryParams : %@\n additionalParameters : %@", NSStringFromClass([self class]), self, [self.URL absoluteString],self.pathComponents,self.queryParams,self.additionalParameters];
 }
 
 @end

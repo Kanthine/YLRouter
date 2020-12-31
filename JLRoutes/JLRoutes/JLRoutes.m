@@ -37,7 +37,7 @@ static Class JLRGlobal_routeDefinitionClass;/// 默认类
 
 @interface JLRoutes ()
 
-@property (nonatomic, strong) NSMutableArray *mutableRoutes;
+@property (nonatomic, strong) NSMutableArray<JLRRouteDefinition *> *mutableRoutes;
 @property (nonatomic, strong) NSString *scheme;
 
 - (JLRRouteRequestOptions)_routeRequestOptions;
@@ -289,7 +289,7 @@ static Class JLRGlobal_routeDefinitionClass;/// 默认类
  * 2、在路由器的数组 mutableRoutes 中匹配已注册的对应路由，
  *     如果不匹配，中断当前循环，进入下一轮查询
  *     如果匹配，但没有执行 executeRouteBlock 则立即返回
- *     如果匹配，执行 handlerBlock；不再向下执行！
+ *     如果匹配，执行 handlerBlock；中断循环！
  * 3、如果找不到匹配的路由，尝试去全局路由来匹配
  * 4、如果还是找不到匹配的路由，回调 unmatchedURLHandler()
  * 5、返回路由结果
@@ -339,7 +339,7 @@ static Class JLRGlobal_routeDefinitionClass;/// 默认类
         [self _verboseLog:@"找不到匹配的路由"];
     }
     
-     /// 如果找不到匹配的路由，尝试去全局路由来匹配
+    /// 如果找不到匹配的路由，尝试去全局路由来匹配
     if (!didRoute && self.shouldFallbackToGlobalRoutes && ![self _isGlobalRoutesController]) {
         [self _verboseLog:@"Falling back to global routes..."];
         didRoute = [[JLRoutes globalRoutes] _routeURL:URL withParameters:parameters executeRouteBlock:executeRouteBlock];

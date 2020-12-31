@@ -28,8 +28,7 @@
 
 @implementation JLRRouteDefinition
 
-- (instancetype)initWithPattern:(NSString *)pattern priority:(NSUInteger)priority handlerBlock:(BOOL (^)(NSDictionary *parameters))handlerBlock
-{
+- (instancetype)initWithPattern:(NSString *)pattern priority:(NSUInteger)priority handlerBlock:(BOOL (^)(NSDictionary *parameters))handlerBlock{
     NSParameterAssert(pattern != nil);
     
     if ((self = [super init])) {
@@ -37,6 +36,7 @@
         self.priority = priority;
         self.handlerBlock = handlerBlock;
         
+        /// 剔除开头的 / ，保证路径组件的第一个路径不是空
         if ([pattern characterAtIndex:0] == '/') {
             pattern = [pattern substringFromIndex:1];
         }
@@ -46,9 +46,8 @@
     return self;
 }
 
-- (NSString *)description
-{
-    return [NSString stringWithFormat:@"<%@ %p> - %@ (priority: %@)", NSStringFromClass([self class]), self, self.pattern, @(self.priority)];
+- (NSString *)description{
+    return [NSString stringWithFormat:@"<%@ %p %@> - %@ (priority: %@) \n patternPathComponents : %@", NSStringFromClass([self class]), self ,self.scheme, self.pattern, @(self.priority),self.patternPathComponents];
 }
 
 - (BOOL)isEqual:(id)object
@@ -91,26 +90,32 @@
 
 #pragma mark - Main API
 
-/// 匹配阶段通过对注册内容进行查找，找到匹配项。并对匹配内容进行拼接，完成匹配pattern的匹配和变量赋值的操作
+/** 匹配有效的响应，基于以下几个判断：
+ * 1、不包含通配符，路径组件的数量又不一样，返回一个无效的响应；
+ * 2、判断 request.pathComponents 与 RouteDefinition.patternPathComponents 相对位置的路径是否一致：
+ *    如果一致，截取 URL 中的变量，
+ *    如果不一致，则返回 routeVariables = nil ；表示不匹配
+ * 3、将 request.url 的请求附加参数、变量参数、request.additionalParameters 合并为一个字典，封装一个有效的响应
+ */
 - (JLRRouteResponse *)routeResponseForRequest:(JLRRouteRequest *)request{
     /// 是否包含通配符 '*'
     BOOL patternContainsWildcard = [self.patternPathComponents containsObject:@"*"];
     
-    /// 不包含通配符，路径组件的数量又不一样，返回一个无效的响应
+    /// 1、不包含通配符，路径组件的数量又不一样，返回一个无效的响应
     if (request.pathComponents.count != self.patternPathComponents.count && !patternContainsWildcard) {
         return [JLRRouteResponse invalidMatchResponse];
     }
     
-    /// 3. 通过注册的patternComponent “:”来作为一个key，拿到对应的repuest中的patternComponent，组成一个键值对;
-    /// 4. 如果非包含“:”的patternComponent与repuest中的patternComponent不符合，返回不匹配。
+    /// 2、判断 request.pathComponents 与 RouteDefinition.patternPathComponents 相对位置的路径是否一致
+    ///   如果一致，截取 URL 中的变量，
+    ///   如果不一致，则返回 routeVariables = nil ；表示不匹配
     NSDictionary *routeVariables = [self routeVariablesForRequest:request];
     
     if (routeVariables != nil) {
-        // It's a match, set up the param dictionary and create a valid match response
+        // 如果匹配，将 request.url 的请求附加参数、变量参数、request.additionalParameters 合并为一个字典
         NSDictionary *matchParams = [self matchParametersForRequest:request routeVariables:routeVariables];
         return [JLRRouteResponse validMatchResponseWithParameters:matchParams];
-    } else {
-        /// 没有匹配的变量，返回一个无效响应
+    } else { /// 没有匹配的变量，返回一个无效响应
         return [JLRRouteResponse invalidMatchResponse];
     }
 }
@@ -131,13 +136,15 @@
 #pragma mark - 解析 Route 变量
 
 /** 解析并返回指定请求的路由变量
- * @param request 用于解析变量值的请求
- * 如果匹配，则解析routeVariables ;如果不匹配，则解析路由变量为nil
+ * 注册路由时的路径，如果使用 : 开头，如 mainTabBar/:name
+ *               则一个请求走到这里，会尝试取出该请求的对应参数 mainTabBar/user
+ *               @{@"name":@"user"}
+ * @note 注册路由模型时，路径组件仅仅使用 \ 分割；
+ *       而请求 request 的路径组件使用 NSURLComponents 处理的附加的参数！
+ *       所以，注册路由时的 URL 一定不能包含参数，否则永远不可能匹配到有效响应
  */
-- (NSDictionary <NSString *, NSString *> *)routeVariablesForRequest:(JLRRouteRequest *)request
-{
+- (NSDictionary <NSString *, NSString *> *)routeVariablesForRequest:(JLRRouteRequest *)request{
     NSMutableDictionary *routeVariables = [NSMutableDictionary dictionary];
-    
     BOOL isMatch = YES;
     NSUInteger index = 0;
     
@@ -147,27 +154,25 @@
         if (index < [request.pathComponents count]) {
             URLComponent = request.pathComponents[index];
         } else if (!isPatternComponentWildcard) {
-            // URLComponent is not a wildcard and index is >= request.pathComponents.count, so bail
+            // URLComponent 不是通配符 并且 index 又对 request.pathComponents 越界
+            NSLog(@"URLComponent 不是通配符 并且 index 又对 request.pathComponents 越界");
             isMatch = NO;
             break;
         }
         if ([patternComponent hasPrefix:@":"]) {
-            // this is a variable, set it in the params
+            // : 开头的路径是一个变量, 将该变量设置到参数 params 中
             NSAssert(URLComponent != nil, @"URLComponent cannot be nil");
             
             ///当字符串长度大于 1 时，去掉字符串开头的 ':' 与 字符串结尾的 '#'
             NSString *variableName = [self routeVariableNameForValue:patternComponent];
-            
             ///对 URLComponent 解码，去掉字符串结尾的 '#'
             NSString *variableValue = [self routeVariableValueForValue:URLComponent];
-            
-            // Consult the parsing utilities as well to do any other standard variable transformations
             BOOL decodePlusSymbols = ((request.options & JLRRouteRequestOptionDecodePlusSymbols) == JLRRouteRequestOptionDecodePlusSymbols);
             variableValue = [JLRParsingUtilities variableValueFrom:variableValue decodePlusSymbols:decodePlusSymbols];
             
-            routeVariables[variableName] = variableValue;
+            routeVariables[variableName] = variableValue;/// 将该变量设置到参数 params 中
         } else if (isPatternComponentWildcard) {
-            // match wildcards
+            // 匹配通配符
             NSUInteger minRequiredParams = index;
             if (request.pathComponents.count >= minRequiredParams) {
                 // match: /a/b/c/* has to be matched by at least /a/b/c
@@ -179,7 +184,7 @@
             }
             break;
         } else if (![patternComponent isEqualToString:URLComponent]) {
-            // break if this is a static component and it isn't a match
+            //路径组件 request.pathComponents 与 JLRRouteDefinition.patternPathComponents 相对位置的路径不一致，则终断循环
             isMatch = NO;
             break;
         }

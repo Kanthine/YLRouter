@@ -48,7 +48,6 @@ FOUNDATION_EXPORT NSString* const kYLRouteURL_Tab_News;
 
 ///组件化： SDK 内的控制器
 FOUNDATION_EXPORT NSString* const kYLRouteURLReader;
-FOUNDATION_EXPORT NSString* const kYLRouteURLReader_1;
 
 //App 内所有控制器
 FOUNDATION_EXPORT NSString* const kYLRouteURLWebview;

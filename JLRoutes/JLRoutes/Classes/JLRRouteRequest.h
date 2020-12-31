@@ -27,11 +27,6 @@ typedef NS_OPTIONS(NSUInteger, JLRRouteRequestOptions) {
     JLRRouteRequestOptionTreatHostAsPathComponent = 1 << 1
 };
 
-
-/** JLRRouteRequest 是一个表示路由 URL 请求的模型，提供输入 URL 的分解；
- * 分解为scheme、path、param和fragment等；
- * 然后由 JLRRouteDefinition 使用该请求来尝试匹配，生成一个匹配的响应 JLRRouteRequest
- */
 @interface JLRRouteRequest : NSObject
 
 /// 路由的URL
@@ -40,7 +35,7 @@ typedef NS_OPTIONS(NSUInteger, JLRRouteRequestOptions) {
 /// URL的路径组件
 @property (nonatomic, strong, readonly) NSArray *pathComponents;
 
-/// URL的查询参数
+/// URL 中的拼接参数
 @property (nonatomic, strong, readonly) NSDictionary *queryParams;
 
 /// 路由请求选项，一般从框架全局选项配置。
@@ -49,16 +44,13 @@ typedef NS_OPTIONS(NSUInteger, JLRRouteRequestOptions) {
 /// 作为匹配参数的一部分传递的其他参数
 @property (nonatomic, copy, nullable, readonly) NSDictionary *additionalParameters;
 
-
-///-------------------------------
-/// @name 创建一个路由请求
-///-------------------------------
-
-
-/** 创建一个路由请求
- * @param URL 路由的URL
- * @param options 一些配置
- * @param additionalParameters 在针对此请求创建的任何匹配字典中包含的其他参数。
+/** JLRRouteRequest 的初始化方法
+ *  1、使用 NSURLComponents 将一个 URL 拆分为 scheme、host、port、path、query、fragment 等；
+ *  2、 将 components.host 拼接到 path 中 ？
+ *          条件一：components.host.length > 0；
+ *          条件二：（components.host 不是 localhost 并且 components.host 不包含 .） || 配置项
+ *     如果将 components.host 拼接到 path 中，则 JLRRouteRequest.pathComponents 包含 host 并且 包含 path
+ *  3、 将 URL 的附带参数 components.queryItems 转为字典格式 JLRRouteRequest.queryParams
  */
 - (instancetype)initWithURL:(NSURL *)URL options:(JLRRouteRequestOptions)options additionalParameters:(nullable NSDictionary *)additionalParameters NS_DESIGNATED_INITIALIZER;
 

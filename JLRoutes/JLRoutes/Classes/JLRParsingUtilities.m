@@ -151,10 +151,10 @@
     NSSet <JLRParsingUtilities_RouteSubpath *> *requiredSubpaths = [NSSet setWithArray:[subpaths JLRoutes_filter:^BOOL(JLRParsingUtilities_RouteSubpath *subpath) {
         return !subpath.isOptionalSubpath;
     }]];
-
+    
     /// 然后，将子路径排列组合为可能的路由模式
     NSArray <NSArray <JLRParsingUtilities_RouteSubpath *> *> *allSubpathCombinations = [subpaths JLRoutes_allOrderedCombinations];
-
+    
     /// 最后，过滤掉实际上不满足规则的的路由模式
     /// allSubpathCombinations 中的元素数组： subpath 没有必选的，该组元素过滤掉
     NSArray <NSArray <JLRParsingUtilities_RouteSubpath *> *> *validSubpathCombinations = [allSubpathCombinations JLRoutes_filter:^BOOL(NSArray <JLRParsingUtilities_RouteSubpath *> *possibleRouteSubpaths) {
