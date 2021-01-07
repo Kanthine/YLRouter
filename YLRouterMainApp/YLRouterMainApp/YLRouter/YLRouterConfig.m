@@ -14,7 +14,6 @@ NSString *const kYLRouterMainScheme = @"YLRouterMain";
 NSString* const kYLRouterViewController = @"viewController";
 NSString* const kYLRouterControllerTitle = @"navigationItemTitle";
 NSString* const kYLRouterUserPermissionLevel = @"User_Permission_Level";
-NSString* const kJSDVCRouteClassFlags = @"flags";
 
 
 //控制器跳转相关参数配置
@@ -25,17 +24,15 @@ NSString* const kYLRouterSegueModal = @"kYLRouterSegueModal";
 NSString* const kYLRouterSegueAnimatedKey = @"kYLRouterSegueAnimatedKey";
 NSString* const kYLRouterSegueHidesBottomBarKey = @"kYLRouterSegueHidesBottomBarKey";
 NSString* const kYLRouterSegueTabNameKey = @"kYLRouterSegueTabNameKey";
+NSString* const kYLRouterSegueModalIsNeedNavigationKey = @"kYLRouterSegueModalIsNeedNavigationKey";
 
 
-NSString* const kJSDVCRouteBackIndex = @"JSDVCRouteBackIndex";
-NSString* const kJSDVCRouteBackPage = @"JSDVCRouteBackPage";
-NSString* const kJSDVCRouteBackPageOffset = @"JSDVCRouteBackPageOffset";
-NSString* const kJSDVCRouteFromOutside = @"JSDVCRouteFromOutside";
-NSString* const kJSDVCRouteNeedLogin = @"JSDVCRouteNeedLogin";
-NSString* const kJSDVCRouteSegueNeedNavigation = @"JSDVCRouteNeedNavigation";
+NSString* const kYLRouterSegueBack = @"kYLRouterSegueBack";
+NSString* const kYLRouterBackPagesKey = @"kYLRouterBackPagesKey";
+NSString* const kYLRouterBackThePageKey = @"kYLRouterBackThePageKey";
+NSString* const kYLRouterBackToRootKey = @"kYLRouterBackToRootKey";
 
-NSString* const kJSDVCRouteIndexRoot = @"root";
-NSString* const kJSDVCRouteSegueBack = @"/back";
+
 
 
 //TabBar 下控制器
@@ -58,22 +55,18 @@ NSString* const kYLRouteURL_User_Set_NickName = @"YLRouterMain://User/set/nickNa
     return @{
         kYLRouteURLWebview: @{kYLRouterViewController: @"YLWebViewController",
                              kYLRouterControllerTitle: @"WebView",
-                             kJSDVCRouteClassFlags: @"",
                              kYLRouterUserPermissionLevel: @(0),
         },
         kYLRouteURLReader: @{kYLRouterViewController: @"YLReaderViewController",
                             kYLRouterControllerTitle: @"阅读器",
-                             kJSDVCRouteClassFlags: @"",
                             kYLRouterUserPermissionLevel: @(0),
         },
         kYLRouteURL_User_Set: @{kYLRouterViewController: @"UserSetViewController",
                                kYLRouterControllerTitle: @"用户设置",
-                              kJSDVCRouteClassFlags: @"",
                                kYLRouterUserPermissionLevel: @(0),
         },
         kYLRouteURL_User_Set_NickName: @{kYLRouterViewController: @"UserSetNickNameViewController",
                                kYLRouterControllerTitle: @"用户昵称设置",
-                              kJSDVCRouteClassFlags: @"",
                                kYLRouterUserPermissionLevel: @(0),
         },
     };

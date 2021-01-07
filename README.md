@@ -21,9 +21,30 @@
 
 #### 1、组件化与路由
 
+* 组件”强调的是复用，它被各个模块或组件直接依赖，是基础设施，它一般不包含业务或者包含弱业务，属于纵向分层（比如网络请求组件、图片下载组件）。
+* “模块”强调的是封装，它更多的是指功能独立的业务模块，属于横向分层（比如购物车模块、个人中心模块）。
+
+所以从大家实施“组件化”的目的来看，叫做“模块化”似乎更为合理。
+但“组件”与“模块”都是前人定义的意义，“iOS 组件化”的概念也已经先入为主，所以只需要明白“iOS 组件化”更多的是做业务模块之间的解耦就行了。
+
 
 
 #### 2、App 之间跳转方式
+
+在 iOS 系统间，不同App之间的跳转，主要有两种方式：[URL Scheme](https://developer.apple.com/library/archive/featuredarticles/iPhoneURLScheme_Reference/Introduction/Introduction.html#//apple_ref/doc/uid/TP40007899) 方式与 Universal Links 方式！
+
+##### 2.1、URL Scheme 方式
+
+iOS系统是默认支持 [URL Scheme](https://developer.apple.com/library/archive/featuredarticles/iPhoneURLScheme_Reference/Introduction/Introduction.html#//apple_ref/doc/uid/TP40007899) 的；比如在 iPhone 的 Safari 浏览器上面输入如下的命令，会自动打开一些App：
+
+```
+// 打开邮箱
+mailto://
+
+// 给110拨打电话
+tel://110
+```
+
 
 
 ![NSURLComponents 处理 URL](https://upload-images.jianshu.io/upload_images/7112462-6b431cfbec56124d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
@@ -39,10 +60,8 @@ NSLog(@"components ==== %@",components);
 
 #### 3、源码解读 `JLRoutes`
 
-`Github` 上 `Star` 最多的路由方案是  [JLRoutes](https://github.com/joeldev/JLRoutes) ， 我们来分析下它的具体设计思路！
+`Github` 上 `Star` 最多的路由方案是  [JLRoutes](https://github.com/joeldev/JLRoutes) ， 该方案基于 [URL Scheme](https://developer.apple.com/library/archive/featuredarticles/iPhoneURLScheme_Reference/Introduction/Introduction.html#//apple_ref/doc/uid/TP40007899)  方式跳转的！我们来分析下它的具体设计思路！
 
-
-JLRoutes 是基于 URL Scheme 方式跳转的！
 
 
 ![JLRoutes 设计思路](https://upload-images.jianshu.io/upload_images/7112462-29449b61a8b00138.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)

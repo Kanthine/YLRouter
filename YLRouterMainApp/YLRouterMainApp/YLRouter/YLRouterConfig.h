@@ -27,20 +27,22 @@ FOUNDATION_EXPORT NSString *const kYLRouterSegueAnimatedKey;
 FOUNDATION_EXPORT NSString *const kYLRouterSegueHidesBottomBarKey;
 /// 跳转时，tabbar 是否需要切换至指定位置
 FOUNDATION_EXPORT NSString* const kYLRouterSegueTabNameKey;
+/// Modal 时是否需要导航控制器: 默认不需要
+FOUNDATION_EXPORT NSString* const kYLRouterSegueModalIsNeedNavigationKey;
 
 
+/********* 返回到指定页面（同级导航栏） ******/
 
-extern NSString* const kJSDVCRouteBackIndex;//处理同级导航栏返回层级 Index
-extern NSString* const kJSDVCRouteBackPage;//指定同级导航栏到此页面
-extern NSString* const kJSDVCRouteBackPageOffset;//指定
-extern NSString* const kJSDVCRouteFromOutside;//处理外部跳转到App
-extern NSString* const kJSDVCRouteNeedLogin;//指定需要登录才能跳转的页面
-extern NSString* const kJSDVCRouteSegueNeedNavigation;  //Modal 时需要导航控制器;
-extern NSString* const kJSDVCRouteIndexRoot;  //导航栏根控制器
-extern NSString* const kJSDVCRouteSegueBack;  //返回上一页;
+/// 控制器的返回
+FOUNDATION_EXPORT NSString* const kYLRouterSegueBack;
+/// 回退多少页
+FOUNDATION_EXPORT NSString* const kYLRouterBackPagesKey;
+/// 回退到指定页面
+FOUNDATION_EXPORT NSString* const kYLRouterBackThePageKey;
+/// 回退到根控制器
+FOUNDATION_EXPORT NSString* const kYLRouterBackToRootKey;
 
 
-extern NSString* const kJSDVCRouteClassFlags;
 
 //TabBar 下控制器
 FOUNDATION_EXPORT NSString* const kYLRouteURL_Tab_User;

@@ -56,22 +56,20 @@ static inline JLRoutes *YLRouter(void){
 #import <UIKit/UIKit.h>
 
 
-@interface UIViewController (JSDTool)
+@interface UIViewController (GetController)
 
-+ (UIViewController* )jsd_rootViewController;
-+ (UIViewController* )jsd_findVisibleViewController;
++ (UIViewController* )yl_GetRootViewController;
++ (UIViewController* )yl_GetCurrentViewController;
 
 @end
-@implementation UIViewController (JSDTool)
+@implementation UIViewController (GetController)
 
-+ (UIViewController *)jsd_rootViewController {
-    
++ (UIViewController *)yl_GetRootViewController {
     return [UIApplication sharedApplication].delegate.window.rootViewController;
 }
 
-+ (UIViewController *)jsd_findVisibleViewController {
-    
-    UIViewController* currentViewController = [self jsd_rootViewController];
++ (UIViewController *)yl_GetCurrentViewController {
+    UIViewController* currentViewController = [self yl_GetRootViewController];
 
     BOOL runLoopFind = YES;
     while (runLoopFind) {
@@ -132,7 +130,7 @@ static inline JLRoutes *YLRouter(void){
         return [MainTabBarController setSelectedVC:parameters[@"name"] parameters:parameters];
     }];
     // 注册返回上层页面 Router, 使用 [JSDVCRouter openURL:kJSDVCRouteSegueBack] 返回上一页 或 [JSDVCRouter openURL:kJSDVCRouteSegueBack parameters:@{kJSDVCRouteBackIndex: @(2)}]  返回前两页
-    [self addRoute:kJSDVCRouteSegueBack handler:^BOOL(NSDictionary * _Nonnull parameters) {
+    [self addRoute:kYLRouterSegueBack handler:^BOOL(NSDictionary * _Nonnull parameters) {
         return [self executeBackRouterParameters:parameters];
     }];
 }
@@ -147,7 +145,7 @@ static inline JLRoutes *YLRouter(void){
 //        return NO;
 //    }
     //统一初始化控制器,传参和跳转;
-    UIViewController* vc = [self viewControllerWithClassName:className routerMap:routerMap parameters: parameters];
+    UIViewController* vc = [self viewControllerWithClassName:className routerMap:routerMap parameters:parameters];
     if (vc) {
         [self gotoViewController:vc parameters:parameters];
         return YES;
@@ -197,7 +195,7 @@ static inline JLRoutes *YLRouter(void){
         [MainTabBarController setSelectedVC:parameters[kYLRouterSegueTabNameKey] parameters:@{}];
     }
     
-    UIViewController* currentVC = [UIViewController jsd_findVisibleViewController];
+    UIViewController* currentVC = [UIViewController yl_GetCurrentViewController];
     
     /// 决定 present 或者 Push; 默认值 Push
     NSString *segue = parameters[kYLRouterSegueKey] ? parameters[kYLRouterSegueKey] : kYLRouterSeguePush;
@@ -207,14 +205,13 @@ static inline JLRoutes *YLRouter(void){
     BOOL hidesBottomBarWhenPushed = parameters[kYLRouterSegueHidesBottomBarKey] ? [parameters[kYLRouterSegueHidesBottomBarKey] boolValue] : YES;
     
 
-
     if ([segue isEqualToString:kYLRouterSeguePush]) { //PUSH
         if (currentVC.navigationController) {
             vc.hidesBottomBarWhenPushed = hidesBottomBarWhenPushed;
 
-            NSString *backIndexString = [NSString stringWithFormat:@"%@",parameters[kJSDVCRouteBackIndex]];
+            NSString *backIndexString = [NSString stringWithFormat:@"%@",parameters[kYLRouterBackPagesKey]];
             UINavigationController* nav = currentVC.navigationController;
-            if ([backIndexString isEqualToString:kJSDVCRouteIndexRoot]) {
+            if ([backIndexString isEqualToString:kYLRouterBackToRootKey]) {
                 NSMutableArray *vcs = [NSMutableArray arrayWithObject:nav.viewControllers.firstObject];
                 [vcs addObject:vc];
                 [nav setViewControllers:vcs animated:animated];
@@ -230,7 +227,7 @@ static inline JLRoutes *YLRouter(void){
             }
         }
         else { //由于无导航栏, 直接执行 Modal
-            BOOL needNavigation = parameters[kJSDVCRouteSegueNeedNavigation] ? NO : YES;
+            BOOL needNavigation = parameters[kYLRouterSegueModalIsNeedNavigationKey] ? NO : YES;
             if (needNavigation) {
                 UINavigationController* navigationVC = [[UINavigationController alloc] initWithRootViewController:vc];
                 //vc.modalPresentationStyle = UIModalPresentationFullScreen;
@@ -243,7 +240,7 @@ static inline JLRoutes *YLRouter(void){
         }
     }
     else { //Modal
-        BOOL needNavigation = parameters[kJSDVCRouteSegueNeedNavigation] ? parameters[kJSDVCRouteSegueNeedNavigation] : NO;
+        BOOL needNavigation = parameters[kYLRouterSegueModalIsNeedNavigationKey] ? parameters[kYLRouterSegueModalIsNeedNavigationKey] : NO;
         if (needNavigation) {
             UINavigationController* navigationVC = [[UINavigationController alloc] initWithRootViewController:vc];
             //vc.modalPresentationStyle = UIModalPresentationFullScreen;
@@ -260,17 +257,16 @@ static inline JLRoutes *YLRouter(void){
 // 返回上层页面回调;
 + (BOOL)executeBackRouterParameters:(NSDictionary *)parameters {
     BOOL animated = parameters[kYLRouterSegueAnimatedKey] ? [parameters[kYLRouterSegueAnimatedKey] boolValue] : YES;
-    NSString *backIndexString = parameters[kJSDVCRouteBackIndex] ? [NSString stringWithFormat:@"%@",parameters[kJSDVCRouteBackIndex]] : nil;  // 指定返回个数, 优先处理此参数;
-    id backPage = parameters[kJSDVCRouteBackPage] ? parameters[kJSDVCRouteBackPage] : nil; // 指定返回到某个页面,
-    NSInteger backPageOffset = parameters[kJSDVCRouteBackPageOffset] ? [parameters[kJSDVCRouteBackPageOffset] integerValue] : 0; // 指定返回到的页面并进行偏移;
-    UIViewController* visibleVC = [UIViewController jsd_findVisibleViewController];
+    NSString *backIndexString = parameters[kYLRouterBackPagesKey] ? [NSString stringWithFormat:@"%@",parameters[kYLRouterBackPagesKey]] : nil;  // 指定返回个数, 优先处理此参数;
+    id backPage = parameters[kYLRouterBackThePageKey] ? parameters[kYLRouterBackThePageKey] : nil; // 指定返回到某个页面,
+    UIViewController* visibleVC = [UIViewController yl_GetCurrentViewController];
     UINavigationController* navigationVC = visibleVC.navigationController;
     if (navigationVC) {
         // 处理 pop 按索引值处理;
 
         if (!(backIndexString == nil || [backIndexString isKindOfClass:NSNull.class] ||
             ([backIndexString isKindOfClass:NSString.class] && backIndexString.length == 0))) {
-            if ([backIndexString isEqualToString:kJSDVCRouteIndexRoot]) {//返回根
+            if ([backIndexString isEqualToString:kYLRouterBackToRootKey]) {//返回根
                 [navigationVC popToRootViewControllerAnimated:animated];
             }
             else {
@@ -307,16 +303,6 @@ static inline JLRoutes *YLRouter(void){
                     }
                 }
             }
-            //有指定页面，根据参数跳转
-            if (pageIndex != NSNotFound) {
-                NSUInteger backIndex = (vcs.count-1) - pageIndex + backPageOffset;
-                if (vcs.count > backIndex) {
-                    [vcs removeObjectsInRange:NSMakeRange(vcs.count-backIndex, backIndex)];
-                    [navigationVC setViewControllers:vcs animated:animated];
-                    return YES;
-                }
-            }
-            //指定页面不存在，return NO，可用于判断当前vc栈里有没有当前页面。
         }
         else {
             [navigationVC popViewControllerAnimated:animated];
